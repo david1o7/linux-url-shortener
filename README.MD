@@ -1,73 +1,137 @@
 # Linux URL Shortener
 
-A URL shortener built in Go while learning backend engineering, system design, and cloud engineering concepts.
+A production-inspired URL shortener built in Go while learning backend engineering, Linux, Docker, Redis, PostgreSQL, and system design.
 
-The goal wasn't just to make a URL shortener. I used this project to learn how production backend services are structured by adding features one at a time instead of building everything at once.
+This project started as "I'll just build a URL shortener."
 
-## Features
+It quickly turned into one of the hardest projects I've built.
+
+Instead of following a tutorial from start to finish, I built every feature myself, researched documentation, fixed bugs, broke the application multiple times, rebuilt parts of it, and gradually turned it into something that resembles a real backend service.
+
+## The System Architecture 
+![System Architecture](images/system-architecture.png)
+
+# Features
 
 - Create short URLs
-- Redirect short URLs to their original destination
-- PostgreSQL for persistent storage
-- Redis caching for faster redirects
-- Redis-based rate limiting
-- Structured logging using slog
-- Dockerized application
-- Database indexing on the shortcode column
-- Click analytics (tracks number of redirects)
+- Redirect shortened URLs
+- PostgreSQL persistence
+- Redis caching
+- Redis rate limiting
+- Database indexing
+- Click analytics
+- Structured logging using Go's slog package
+- Docker support
+- Environment variable configuration
+- Health check endpoint
+- Prometheus metrics
 
-## Tech Stack
+---
+
+# Tech Stack
 
 - Go
 - PostgreSQL
 - Redis
 - Docker
-- Docker Compose
+- Prometheus
+- Linux (WSL2)
+- Git
+- GitHub
 
-## Project Structure
+---
 
-```
-.
-├── cmd/
-├── internal/
-│   ├── cache/
-│   ├── database/
-│   ├── handlers/
-│   ├── logger/
-│   ├── middleware/
-│   ├── models/
-│   └── services/
-├── Dockerfile
-├── docker-compose.yml
-├── go.mod
-└── go.sum
-```
+# What I Learned
 
-## Running the project
+This project taught me much more than writing CRUD APIs.
+
+I learned:
+
+- Building REST APIs in Go
+- Organizing large Go projects
+- PostgreSQL
+- Redis
+- Docker
+- Docker networking
+- Environment variables
+- Database indexing
+- Rate limiting
+- Structured logging
+- Prometheus metrics
+- Health checks
+- Concurrency using goroutines
+- Linux development using WSL2
+- Reading documentation instead of relying on tutorials
+
+More importantly, I learned that backend engineering is much more than writing endpoints.
+
+Most of the work happens around reliability, monitoring, debugging, performance and infrastructure.
+
+---
+
+# Challenges
+
+This project was easily one of the most frustrating projects I've built.
+
+Some of the issues I had to solve included:
+
+- Learning Linux while building the project
+- Configuring WSL2
+- PostgreSQL connection errors
+- Docker networking issues
+- Redis integration
+- Environment variable bugs
+- Database migration mistakes
+- Debugging Go errors without much experience
+- Getting Docker containers to communicate properly
+- Learning Prometheus from scratch
+
+There were multiple times where I wanted to move on to another project.
+
+Instead, I kept fixing one problem at a time.
+
+Looking back, solving those problems taught me more than writing the actual features.
+
+---
+
+# Running the Project
 
 Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/linux-url-shortener.git
-
-cd linux-url-shortener
+git clone https://github.com/YOUR_USERNAME/Linux-url-shortener.git
+cd Linux-url-shortener
 ```
 
-Start everything
+Install dependencies
+
+```bash
+go mod download
+```
+
+Create your environment variables
+
+```bash
+cp .env.example .env
+```
+
+Run
+
+```bash
+go run ./cmd/server
+```
+
+or
 
 ```bash
 docker compose up --build
 ```
 
-The application will be available at
+---
 
-```
-http://localhost:8080
-```
+# API
 
-## API
-
-### Create a short URL
+## Create Short URL
 
 ```
 POST /shorten
@@ -77,57 +141,81 @@ Example request
 
 ```json
 {
-  "url": "https://google.com"
+    "url":"https://google.com"
 }
 ```
 
-Example response
+---
 
-```json
-{
-  "short_url": "http://localhost:8080/abc123"
-}
-```
-
-### Redirect
+## Redirect
 
 ```
-GET /abc123
+GET /{shortcode}
 ```
 
-Redirects to the original URL.
+---
 
-## Why I built this
+## Health Check
 
-I'm currently learning Go, backend engineering, cloud engineering, and system design.
+```
+GET /health
+```
 
-Instead of following tutorials forever, I'm building projects that introduce concepts like caching, rate limiting, Docker, indexing, and logging.
+---
 
-This project is part of that learning journey.
+## Prometheus Metrics
 
-## Things I learned
+```
+GET /metrics
+```
 
-- Building REST APIs in Go
-- Working with PostgreSQL
-- Redis caching
-- Rate limiting
-- Database indexing
-- Docker and Docker Compose
-- Structured logging
-- Project organization
-- Debugging backend applications
+---
 
-## Future Improvements
+# Current Limitations
 
-- User accounts
+The project is still a work in progress.
+
+Things I'm currently improving:
+
+- Docker Compose setup still needs refinement.
+- Prometheus works, but Grafana dashboards haven't been configured yet.
+- No automated tests yet.
+- No CI/CD pipeline.
+- No production deployment yet.
+- No authentication or user accounts.
+- No URL expiration or custom aliases.
+
+---
+
+# Future Improvements
+
+- Grafana dashboards
+- Graceful shutdown
+- GitHub Actions
+- Unit testing
+- Production deployment
+- Custom shortcodes
 - URL expiration
-- Custom aliases
 - QR code generation
-- Prometheus metrics
-- Health check endpoint
 - CI/CD with GitHub Actions
 - Kubernetes deployment
 
-## License
+---
 
-MIT
+# SEO Keywords
+
+For anyone discovering this project:
+
+Go URL Shortener, Golang URL Shortener, Backend Engineering, Go REST API, PostgreSQL, Redis Cache, Docker, Docker Compose, Prometheus, System Design, Linux Development, Distributed Systems, Backend Portfolio Project, Rate Limiting, URL Shortener API.
+
+---
+
+# Final Thoughts
+
+This project isn't meant to be perfect.
+
+It's a snapshot of my backend engineering journey.
+
+The goal wasn't just to build a URL shortener—it was to understand the technologies and design decisions behind modern backend systems.
+
+I'm continuing to improve it as I learn more about cloud engineering, distributed systems, and system design.
