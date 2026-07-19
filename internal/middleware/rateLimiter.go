@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"Linux-url-shortener/internal/logger"
+	metrics "Linux-url-shortener/internal/metric"
 	"net/http"
+
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -43,6 +45,9 @@ func (r *RateLimiter) Limit(next http.Handler) http.Handler {
 			"Rate Limit Exceeded",
 			"ip", req.RemoteAddr,
 		)
+		
+		metrics.RateLimited.Inc()
+
 			http.Error(w, "Too Many Request", http.StatusTooManyRequests)
 				return
 		}

@@ -4,10 +4,11 @@ import (
 	"Linux-url-shortener/internal/cache"
 	"Linux-url-shortener/internal/database"
 	"Linux-url-shortener/internal/logger"
+	metrics "Linux-url-shortener/internal/metric"
 	"Linux-url-shortener/internal/services"
 	"database/sql"
 	"encoding/json"
-	
+
 	"net/http"
 	"strings"
 )
@@ -41,6 +42,8 @@ func Shorten(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		metrics.UrlsShortened.Inc()
+
 		resp := Response{
 			ShortCode: "http://localhost:8080/" + code,
 		}
@@ -67,6 +70,8 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 				"cache hit",
 				"Original Url", url,
 			)
+
+			metrics.CacheHits.Inc()
 			
 			logger.Log.Info(
 				"Redirecting...",
@@ -86,7 +91,7 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 			}()
 
 			http.Redirect(w,r,url, http.StatusFound)
-
+			metrics.Redirects.Inc()
 			return
 		}
 
@@ -94,6 +99,7 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 			"cache miss",
 			"short code", url,
 		)
+		metrics.CacheMisses.Inc()
 
 		original, err := database.GetUrl(db, code)
 
