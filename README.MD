@@ -68,16 +68,17 @@ I learned:
 - Reading documentation instead of relying on tutorials
 
 Trade offs present:
--Single point of failure (1 golang http server)
--0 back-up databases 
--Redis Can easily get full
--No loadbalancing 
--Rate limiting uses Fixed Window counter which is easy to bypass
+- Single point of failure (1 golang http server)
+- 0 back-up databases 
+- Redis Can easily get full
+- No loadbalancing 
+- Rate limiting uses Fixed Window counter which is easy to bypass
 
 Edge cases Handled:
--Cache Misses and Cache Hits
--Check for duplicated short codes
--Health Endpoint for checking dependencies  
+- Cache Misses and Cache Hits
+- Check for duplicated short codes
+- Health Endpoint for checking dependencies  
+Amongst others.
 
 More importantly, I learned that backend engineering is much more than writing endpoints.
 
