@@ -8,9 +8,12 @@ import (
 	"Linux-url-shortener/internal/services"
 	"database/sql"
 	"encoding/json"
+	"os"
 
 	"net/http"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 type Request struct{
@@ -23,9 +26,24 @@ type Response struct{
 
 func Shorten(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		var req Request
 
-		err := json.NewDecoder(r.Body).Decode(&req)
+		err := godotenv.Load()
+
+		if err != nil{
+			logger.Log.Error(
+				".env file error",
+				"Error", err, 
+			)
+			http.Error(w, "Env file not found", http.StatusInternalServerError)
+			
+			return
+		}
+
+		BaseUrl := os.Getenv("BASE_URL")
+
+		err = json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil{
 			http.Error(w, "Invalid content", http.StatusBadRequest)
@@ -45,7 +63,7 @@ func Shorten(db *sql.DB) http.HandlerFunc {
 		metrics.UrlsShortened.Inc()
 
 		resp := Response{
-			ShortCode: "http://localhost:8080/" + code,
+			ShortCode: BaseUrl + code,
 		}
 		w.Header().Set("Content-Type", "application/json")
 

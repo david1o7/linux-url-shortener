@@ -27,9 +27,10 @@ func NewRedisCache() *RedisCache {
 	}
 
 	RedisAddr := os.Getenv("REDIS_ADDR")
+	RedisHost:= os.Getenv("REDIS_HOST")
 
 	client := redis.NewClient(&redis.Options{
-		Addr: "localhost"+RedisAddr,
+		Addr: RedisHost+RedisAddr,
 		DB: 0,
 	})
 

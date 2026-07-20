@@ -11,6 +11,10 @@ Instead of following a tutorial from start to finish, I built every feature myse
 ## The System Architecture 
 ![System Architecture](images/system-architecture.png)
 
+## IMAGES 
+![Image](images/image.png)
+![gif](images/Code_XoEEY9mPtk.gif)
+
 # Features
 
 - Create short URLs
@@ -62,6 +66,18 @@ I learned:
 - Concurrency using goroutines
 - Linux development using WSL2
 - Reading documentation instead of relying on tutorials
+
+Trade offs present:
+-Single point of failure (1 golang http server)
+-0 back-up databases 
+-Redis Can easily get full
+-No loadbalancing 
+-Rate limiting uses Fixed Window counter which is easy to bypass
+
+Edge cases Handled:
+-Cache Misses and Cache Hits
+-Check for duplicated short codes
+-Health Endpoint for checking dependencies  
 
 More importantly, I learned that backend engineering is much more than writing endpoints.
 
