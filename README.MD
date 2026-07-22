@@ -1,142 +1,264 @@
 # Linux URL Shortener
-A production-inspired URL shortener built in Go.
-This project started as a simple "shorten a URL" application, but my goal quickly changed. Instead of building another CRUD project, I wanted to learn how backend services are actually built and operated.
-Along the way I ended up learning about databases, caching, testing, observability, graceful shutdown, dependency injection, Docker, security and a lot of debugging.
-Tech Stack
+
+A production-inspired URL shortener built with Go.
+
+This project started as a simple **"shorten a URL"** application.
+
+Very quickly, the goal changed.
+
+Instead of building another CRUD project, I wanted to understand how backend services are actually built, monitored, tested and operated in production.
+
+Along the way I learned about databases, caching, observability, testing, graceful shutdown, dependency injection, Docker, security and a lot of debugging.
+
+---
+
+# Tech Stack
+
 - Go
 - PostgreSQL
 - Redis
 - Docker
 - Prometheus
-- GitHub Actions (planned)
-- Grafana (planned)
 
-## The System Architecture 
+### Planned
+
+- Grafana
+- GitHub Actions
+- Kubernetes
+
+---
+
+# System Architecture
+
 ![System Architecture](images/System-Design1.png)
 
-## IMAGES 
-![Image](images/image.png)
-![gif](images/Code_XoEEY9mPtk.gif)
+---
 
-## Features
+# Demo
+
+![Application](images/image.png)
+
+![Demo GIF](images/Code_XoEEY9mPtk.gif)
+
+---
+
+# Features
+
+### Core
+
 - Generate short URLs
 - Redirect shortened URLs
 - PostgreSQL persistence
 - Redis caching
 - Indexed database lookups
-- Rate limiting
+
+### Security
+
 - URL validation
 - SSRF protection
 - DNS abstraction
 - HTTP client abstraction
-- Health check endpoint
+- Rate limiting
+
+### Observability
+
 - Prometheus metrics
 - Request counters
 - Request latency histogram
 - Structured logging
+- Health check endpoint
+
+### Reliability
+
 - Graceful shutdown
+- Environment variable configuration
 - Unit tests
 - Integration tests
-- Environment variable configuration
 
-<<<<<<< HEAD
-Trade offs present:
-- Single point of failure (1 golang http server)
-- 0 back-up databases 
-- Redis Can easily get full
-- No loadbalancing 
-- Rate limiting uses Fixed Window counter which is easy to bypass
+---
 
-Edge cases Handled:
-- Cache Misses and Cache Hits
-- Check for duplicated short codes
-- Health Endpoint for checking dependencies  
-Amongst others.
-=======
-## What I Learned
-This project taught me much more than shortening URLs.
-Some of the topics I learned while building it:
+# System Trade-offs
+
+Every design has compromises.
+
+Current trade-offs include:
+
+- Single Go HTTP server (single point of failure)
+- No database replication
+- No load balancing
+- Redis memory can become full
+- Fixed-window rate limiting can be bypassed near window boundaries
+
+---
+
+# Edge Cases Handled
+
+Some of the scenarios the application handles include:
+
+- Cache hits
+- Cache misses
+- Duplicate short-code detection
+- Invalid URLs
+- Private IP addresses
+- Loopback addresses
+- Unsupported URL schemes
+- SSRF attacks
+- Dependency health checks
+
+---
+
+# What I Learned
+
+This project taught me much more than URL shortening.
+
+Some of the biggest topics I learned include:
+
 - Dependency Injection
 - Interfaces in Go
-- Repository-style database access
+- Repository pattern
 - Redis caching
 - SQL indexing
 - Docker
 - Environment variables
-- Prometheus metrics
+- Prometheus
 - Histograms vs Counters
-- Graceful shutdown
-- Contexts
 - HTTP middleware
+- Contexts
+- Graceful shutdown
 - Unit testing
 - Integration testing
-- SSRF protection
 - DNS resolution
-- HTTP clients
+- SSRF protection
 - Production logging
 
-## Biggest Challenges
+---
+
+# Biggest Challenges
+
 This project definitely wasn't built in one sitting.
-Docker
+
+## Docker
+
 Docker was completely new to me.
-At first, even building the container felt confusing. I spent quite a while understanding how images, containers and Dockerfiles actually worked before finally getting the application running inside a container.
-Rate Limiting
-The first implementation immediately rate-limited every request.
-It turned out to be a bug in my implementation rather than Redis itself.
-Debugging that taught me a lot about middleware execution order.
-Prometheus
-I initially couldn't understand why my metrics page was blank.
-The issue wasn't Prometheus.
-It was my middleware chain.
-I had created the metrics middleware but wasn't actually using it.
-Fixing that taught me how middleware wrapping works in Go.
-DNS Lookup Tests
-This was probably the most frustrating part of the project.
-I refactored my URL validator to use dependency injection so I could mock DNS lookups.
-Getting the tests to work correctly took much longer than expected.
-At one point the "valid URL" test kept failing and I couldn't figure out why.
-Eventually I discovered the validator itself wasn't broken.
-The requests were timing out because of my internet connection.
-Increasing the timeout fixed the issue.
-That bug taught me that sometimes the code isn't wrong—the environment is.
-URL Validation
-I also learned that validating URLs is much harder than I originally thought.
-It's not enough to check if a string looks like a URL.
-I had to think about:
+
+Even building my first container felt confusing.
+
+I spent a lot of time understanding images, containers and Dockerfiles before everything finally worked.
+
+---
+
+## Rate Limiting
+
+My first implementation rate-limited every request.
+
+The bug wasn't Redis.
+
+It was my middleware logic.
+
+Debugging it taught me how middleware execution order works in Go.
+
+---
+
+## Prometheus
+
+At one point my `/metrics` page was completely blank.
+
+I thought Prometheus was broken.
+
+It wasn't.
+
+I had forgotten to wrap my router with the metrics middleware.
+
+That bug helped me understand how middleware chaining actually works.
+
+---
+
+## DNS Lookup Tests
+
+This was easily one of the hardest parts of the project.
+
+I refactored my validator to use dependency injection so DNS lookups could be mocked during testing.
+
+Getting those tests working took much longer than expected.
+
+Eventually I discovered the validator wasn't the problem.
+
+My internet connection was.
+
+The requests kept timing out.
+
+Increasing the timeout fixed everything.
+
+That experience reminded me that sometimes the environment—not the code—is the real bug.
+
+---
+
+## URL Validation
+
+I also learned that validating URLs is much harder than I expected.
+
+It's not enough to check whether a string "looks like" a URL.
+
+I had to account for:
+
 - localhost
 - loopback addresses
 - private networks
-- unsupported protocols
 - malformed URLs
+- unsupported protocols
 - SSRF attacks
-- Graceful Shutdown
+
+---
+
+## Graceful Shutdown
+
 Before this project I had never thought about how servers stop.
-Now I understand why production services wait for active requests to finish before exiting and why operating systems send signals like SIGINT and SIGTERM.
-## What I'm Most Proud Of
-I'm proud that I didn't stop after getting the project to "work."
-I kept improving it by adding things that aren't visible to users but matter in production:
-- caching
-- metrics
-- health checks
-- logging
-- testing
-- graceful shutdown
-- security improvements
-Those features taught me much more than simply building another CRUD application.
-Current Limitations
->>>>>>> 9b063e8 (Add Tests, Add Prometheus Histogram, Add New System Arch. Diagram, ReadMe, Add UrlValidator)
 
-## These are things I still want to improve.
-- Docker Compose needs more polish.
-- Grafana dashboard hasn't been set up yet.
-- Custom aliases are not supported.
-- URL expiration isn't implemented.
-- Click analytics aren't implemented.
-- Distributed rate limiting isn't supported.
-- No authentication.
-- No admin dashboard.
+Now I understand why production services wait for active requests to finish before exiting.
 
-## Future Improvements
+I also learned how operating systems notify applications using signals like **SIGINT** and **SIGTERM**.
+
+---
+
+# What I'm Most Proud Of
+
+I'm proud that I didn't stop once the application worked.
+
+Instead, I kept adding features that users rarely notice but backend engineers care about.
+
+Those include:
+
+- Redis caching
+- Metrics
+- Health checks
+- Structured logging
+- Testing
+- Graceful shutdown
+- Security improvements
+
+Those features taught me far more than building another CRUD application ever could.
+
+---
+
+# Current Limitations
+
+The project still has room for improvement.
+
+Current limitations include:
+
+- Docker Compose setup needs polishing
+- Grafana dashboard isn't configured
+- Custom aliases aren't supported
+- URL expiration isn't implemented
+- Click analytics aren't available
+- No authentication
+- No admin dashboard
+- Distributed rate limiting isn't implemented
+
+---
+
+# Future Improvements
+
 - Grafana dashboards
 - Custom aliases
 - URL expiration
@@ -144,40 +266,40 @@ Current Limitations
 - User accounts
 - JWT authentication
 - API documentation
-- Distributed deployment
 - CI/CD pipeline
 - Kubernetes deployment
+- Distributed deployment
 
-
+---
 
 # Running the Project
 
-Clone the repository
+Clone the repository.
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/Linux-url-shortener.git
 cd Linux-url-shortener
 ```
 
-Install dependencies
+Install dependencies.
 
 ```bash
 go mod download
 ```
 
-Create your environment variables
+Create your environment variables.
 
 ```bash
 cp .env.example .env
 ```
 
-Run
+Run locally.
 
 ```bash
-go run ./cmd/server
+go run ./cmd
 ```
 
-or
+Or run with Docker.
 
 ```bash
 docker compose up --build
@@ -189,15 +311,15 @@ docker compose up --build
 
 ## Create Short URL
 
-```
+```http
 POST /shorten
 ```
 
-Example request
+Example request:
 
 ```json
 {
-    "url":"https://google.com"
+  "url": "https://google.com"
 }
 ```
 
@@ -205,7 +327,7 @@ Example request
 
 ## Redirect
 
-```
+```http
 GET /{shortcode}
 ```
 
@@ -213,7 +335,7 @@ GET /{shortcode}
 
 ## Health Check
 
-```
+```http
 GET /health
 ```
 
@@ -221,71 +343,33 @@ GET /health
 
 ## Prometheus Metrics
 
-```
+```http
 GET /metrics
 ```
 
 ---
 
+# If I Built It Again
 
-<<<<<<< HEAD
-The project is still a work in progress.
+If I were starting over, I would:
 
-Things I'm currently improving:
-
-- Docker Compose setup still needs refinement.
-- Prometheus works, but Grafana dashboards haven't been configured yet.
-- No automated tests yet.
-- No CI/CD pipeline.
-- No production deployment yet.
-- No authentication or user accounts.
-- No URL expiration or custom aliases.
-
----
-
-# Future Improvements
-
-- Grafana dashboards
-- Graceful shutdown
-- GitHub Actions
-- Unit testing
-- Production deployment
-- Custom shortcodes
-- URL expiration
-- QR code generation
-- CI/CD with GitHub Actions
-- Kubernetes deployment
-
----
-
-# SEO Keywords
-
-For anyone discovering this project:
-
-Go URL Shortener, Golang URL Shortener, Backend Engineering, Go REST API, PostgreSQL, Redis Cache, Docker, Docker Compose, Prometheus, System Design, Linux Development, Distributed Systems, Backend Portfolio Project, Rate Limiting, URL Shortener API.
+- Design interfaces earlier
+- Write tests sooner
+- Separate packages earlier
+- Centralize configuration from day one
+- Spend more time designing middleware before writing code
+- Think about observability much earlier
 
 ---
 
 # Final Thoughts
 
-This project isn't meant to be perfect.
-
-It's a snapshot of my backend engineering journey.
-
-The goal wasn't just to build a URL shortener—it was to understand the technologies and design decisions behind modern backend systems.
-
-I'm continuing to improve it as I learn more about cloud engineering, distributed systems, and system design.
-=======
-## If I Built It Again
-I would:
-- design interfaces earlier
-- write tests sooner
-- separate packages earlier
-- keep configuration in one place
-- spend more time designing middleware before coding
-Final Thoughts
 This project became much bigger than I expected.
+
 I started by trying to build a URL shortener.
-I ended up learning how backend services are designed, monitored, tested and operated.
-There are still improvements to make, but this project marks a big step for
->>>>>>> 9b063e8 (Add Tests, Add Prometheus Histogram, Add New System Arch. Diagram, ReadMe, Add UrlValidator)
+
+I ended up learning how backend services are designed, tested, monitored and operated in production.
+
+There's still plenty to improve, but this project represents a huge milestone in my backend engineering journey.
+
+I'm continuing to improve it as I learn more about cloud engineering, distributed systems and system design.
