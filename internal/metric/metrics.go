@@ -34,7 +34,35 @@ var RateLimited = prometheus.NewCounter(
 		Help:"Total rate limited requests",
 	},
 )
+var InvalidUrls = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name:"Invalid_urls_total",
+		Help: "Total invalid url requests",
+	},
+)
 
+
+var RequestCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests.",
+		},
+		[]string{"method", "path"},
+	)
+
+var RequestDuration = prometheus.NewHistogramVec(
+	prometheus.HistogramOpts{
+		Name: "http_requests_duration_seconds",
+		Help: "How long does each requests take",
+
+		Buckets: prometheus.DefBuckets,
+	},
+
+	[]string{
+		"method",
+		"path",
+	},
+)
 func Init() {
 	prometheus.MustRegister(
 		UrlsShortened,
@@ -42,5 +70,8 @@ func Init() {
 		CacheHits,
 		CacheMisses,
 		RateLimited,
+		InvalidUrls,
+		RequestDuration,
+		RequestCounter,
 	)
 }

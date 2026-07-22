@@ -5,6 +5,8 @@ import (
 	"Linux-url-shortener/internal/database"
 	"Linux-url-shortener/internal/logger"
 	metrics "Linux-url-shortener/internal/metric"
+	"Linux-url-shortener/internal/validator"
+
 	"Linux-url-shortener/internal/services"
 	"database/sql"
 	"encoding/json"
@@ -24,7 +26,7 @@ type Response struct{
 	ShortCode string `json:"short_code"`
 }
 
-func Shorten(db *sql.DB) http.HandlerFunc {
+func Shorten(db *sql.DB, validator *validator.URLValidator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var req Request
@@ -49,6 +51,13 @@ func Shorten(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Invalid content", http.StatusBadRequest)
 			return
 		}
+
+		if !validator.Validate(req.URL){
+			http.Error(w, "Invalid Url or cant be found", http.StatusBadRequest)
+			metrics.InvalidUrls.Inc()
+			return 
+		}
+
 		code , err:= services.GenerateUniqueCode(db)
 		if err != nil{
 			http.Error(w, err.Error(), 500)
