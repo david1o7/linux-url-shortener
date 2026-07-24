@@ -1,6 +1,4 @@
 # My first docker-COMPOSE.YML FILE😭😁
-version: "3.9"
-
 services:
   app:
     build: .
@@ -11,23 +9,24 @@ services:
       - postgres
       - redis
     environment:
-      DB_HOST: ******
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: ******
-      DB_NAME: urlshortener
+      DB_PASSWORD: Admin
+      DB_NAME: NewUrl_Shortener
       DB_SSLMODE: disable
+      PORT: 8080
 
       REDIS_ADDR: redis:6379
 
   postgres:
-    image: ******:17
-    container_name: *******
+    image: postgres:13
+    container_name: postgres-db
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: *******
-      POSTGRES_DB: urlshortener
+      POSTGRES_PASSWORD: Admin
+      POSTGRES_DB: NewUrl_Shortener
     ports:
       - "5432:5432"
     volumes:
@@ -38,16 +37,31 @@ services:
     container_name: redis-cache
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
   prometheus:
-  image: prom/prometheus
-  container_name: prometheus
-  ports:
-    - "9090:9090"
-  volumes:
-    - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    image: prom/prometheus
+
+    container_name: prometheus
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+
 volumes:
   postgres_data:
   redis_data:
+  grafana_data:

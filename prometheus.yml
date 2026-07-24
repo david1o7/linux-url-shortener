@@ -1,10 +1,11 @@
 # My first prometheus taml file
 
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
 
 scrape_configs:
   - job_name: "url-shortener"
 
     static_configs:
-      - targets: ["app:8080"]
+      - targets:
+          - app:8080

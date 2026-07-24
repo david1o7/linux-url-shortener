@@ -19,14 +19,18 @@ Along the way I learned about databases, caching, observability, testing, gracef
 - Redis
 - Docker
 - Prometheus
+- Grafana
 
 ### Planned
 
-- Grafana
 - GitHub Actions
 - Kubernetes
 
 ---
+
+## Grafana dashboard
+![Grafana Dashboard](images/Grafana.jpg)
+
 
 # System Architecture
 
@@ -259,7 +263,6 @@ Current limitations include:
 
 # Future Improvements
 
-- Grafana dashboards
 - Custom aliases
 - URL expiration
 - Click analytics
