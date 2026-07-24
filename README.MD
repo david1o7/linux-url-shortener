@@ -12,6 +12,23 @@ Along the way I learned about databases, caching, observability, testing, gracef
 
 ---
 
+## Monitoring
+
+The application is monitored using Prometheus and Grafana.
+
+Metrics include:
+
+- URLs shortened
+- Redirect requests
+- Cache hits
+- Cache misses
+- Invalid URL requests
+- Rate limited requests
+- Request latency
+- Health endpoint monitoring
+
+The monitoring stack is orchestrated using Docker Compose.
+
 # Tech Stack
 
 - Go
