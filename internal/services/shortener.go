@@ -3,7 +3,7 @@ package services
 import (
 	"Linux-url-shortener/internal/database"
 	"crypto/rand"
-	"database/sql"
+
 	"math/big"
 )
 
@@ -21,11 +21,11 @@ func GenerateCode(lenght int) string {
 	return string(b)
 }
 
-func GenerateUniqueCode(db *sql.DB) (string, error){
+func GenerateUniqueCode(repo database.Repository) (string, error){
 	for {
 		code := GenerateCode(6)
 
-		exists, err := database.ShortCodeExist(db, code)
+		exists, err := repo.ShortCodeExist(code)
 
 		if err != nil{
 			return "", err

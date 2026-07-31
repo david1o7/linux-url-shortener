@@ -68,10 +68,12 @@ func main(){
 
 	healthHandler := handlers.NewHealthHandler(db, redisCache.Client)
 
+	repo := database.NewPostgresRepository(db)
+
 	Mux := http.NewServeMux()
 
-	Mux.HandleFunc("/shorten", handlers.Shorten(db, urlValidator))
-	Mux.HandleFunc("/", handlers.OriginalUrl(db, redisCache))
+	Mux.HandleFunc("/shorten", handlers.Shorten(repo, urlValidator))
+	Mux.HandleFunc("/", handlers.OriginalUrl(repo, redisCache))
 	Mux.HandleFunc("/health", healthHandler.Health)
 	Mux.Handle("/metrics", promhttp.Handler())
 
@@ -81,9 +83,11 @@ func main(){
 
 	handler := Limiter.Limit(MetricHandler)
 
+	Logged := middleware.Logging(handler)
+
 	server := &http.Server{
 		Addr : ":" + ServerPort,
-		Handler: handler,
+		Handler: Logged,
 	}
 
 	go func(){

@@ -8,7 +8,6 @@ import (
 	"Linux-url-shortener/internal/validator"
 
 	"Linux-url-shortener/internal/services"
-	"database/sql"
 	"encoding/json"
 	"os"
 
@@ -26,7 +25,7 @@ type Response struct{
 	ShortCode string `json:"short_code"`
 }
 
-func Shorten(db *sql.DB, validator *validator.URLValidator) http.HandlerFunc {
+func Shorten(repo database.Repository, validator *validator.URLValidator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var req Request
@@ -58,12 +57,12 @@ func Shorten(db *sql.DB, validator *validator.URLValidator) http.HandlerFunc {
 			return 
 		}
 
-		code , err:= services.GenerateUniqueCode(db)
+		code , err:= services.GenerateUniqueCode(repo)
 		if err != nil{
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		err = database.SaveUrl(db, code, req.URL)
+		err = repo.SaveUrl(code, req.URL)
 		if err != nil{
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -86,7 +85,7 @@ func Shorten(db *sql.DB, validator *validator.URLValidator) http.HandlerFunc {
 	}
 }
 
-func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
+func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request){
 		code := strings.TrimPrefix(r.URL.Path, "/")
 
@@ -106,7 +105,7 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 			)
 
 			go func(){
-				err := database.IncrementClicks(db, code)
+				err := repo.IncrementClicks(code)
 
 			if err != nil{
 					logger.Log.Error(
@@ -128,7 +127,7 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 		)
 		metrics.CacheMisses.Inc()
 
-		original, err := database.GetUrl(db, code)
+		original, err := repo.GetUrl(code)
 
 		if err != nil || original == ""{
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -144,7 +143,7 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 			)
 		
 		go func(){
-			err := database.IncrementClicks(db, code)
+			err := repo.IncrementClicks(code)
 
 			if err != nil{
 					logger.Log.Error(

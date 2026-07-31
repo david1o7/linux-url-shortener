@@ -12,6 +12,45 @@ Along the way I learned about databases, caching, observability, testing, gracef
 
 ---
 
+## Version History
+
+### v1.0
+The initial production-ready version of the Linux URL Shortener includes:
+
+- PostgreSQL persistence
+- Redis caching
+- URL validation with SSRF protection
+- Health check endpoint
+- Rate limiting
+- Prometheus metrics
+- Grafana dashboards
+- Structured logging
+- Graceful shutdown
+- Docker support
+- Unit and integration tests
+
+---
+
+### v2.0 Development
+
+Development for **v2.0** continues on the **`v2`** branch.
+
+This branch focuses on improving maintainability, testing, and automation rather than introducing new end-user features.
+
+Current additions include:
+
+- GitHub Actions CI pipeline
+- Automatic formatting and static analysis (`gofmt` and `go vet`)
+- Automated test execution on every push and pull request
+- Repository wrapper (database abstraction) for dependency inversion
+- Handler unit tests using mocked repositories
+- Improved project architecture to support future database implementations
+- Increased test coverage
+
+The goal of the `v2` branch is to make the project more production-ready and easier to maintain while laying the foundation for future enhancements.
+
+---
+
 ## Monitoring
 
 The application is monitored using Prometheus and Grafana.
