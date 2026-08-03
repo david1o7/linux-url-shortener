@@ -86,13 +86,8 @@ func main() {
 	Logged := middleware.Logging(handler)
 
 	server := &http.Server{
-<<<<<<< Updated upstream
 		Addr : ":" + ServerPort,
 		Handler: Logged,
-=======
-		Addr:    ":" + ServerPort,
-		Handler: handler,
->>>>>>> Stashed changes
 	}
 
 	go func() {

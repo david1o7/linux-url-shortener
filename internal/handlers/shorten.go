@@ -57,7 +57,7 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 			return
 		}
 
-<<<<<<< Updated upstream
+
 		code , err:= services.GenerateUniqueCode(repo)
 		if err != nil{
 			http.Error(w, err.Error(), 500)
@@ -65,15 +65,6 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 		}
 		err = repo.SaveUrl(code, req.URL)
 		if err != nil{
-=======
-		code, err := services.GenerateUniqueCode(db)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		err = database.SaveUrl(db, code, req.URL)
-		if err != nil {
->>>>>>> Stashed changes
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -95,13 +86,9 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 	}
 }
 
-<<<<<<< Updated upstream
+
 func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request){
-=======
-func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
->>>>>>> Stashed changes
 		code := strings.TrimPrefix(r.URL.Path, "/")
 
 		url, err := cache.Get(code)
@@ -119,13 +106,8 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 				"Original Url", url,
 			)
 
-<<<<<<< Updated upstream
 			go func(){
 				err := repo.IncrementClicks(code)
-=======
-			go func() {
-				err := database.IncrementClicks(db, code)
->>>>>>> Stashed changes
 
 				if err != nil {
 					logger.Log.Error(
@@ -157,21 +139,12 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 		cache.Set(code, original)
 
 		logger.Log.Info(
-<<<<<<< Updated upstream
 				"Redirecting...",
 				"Original Url", original,
 			)
 		
 		go func(){
 			err := repo.IncrementClicks(code)
-=======
-			"Redirecting...",
-			"Original Url", original,
-		)
-
-		go func() {
-			err := database.IncrementClicks(db, code)
->>>>>>> Stashed changes
 
 			if err != nil {
 				logger.Log.Error(

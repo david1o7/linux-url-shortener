@@ -20,11 +20,9 @@ func GenerateCode(lenght int) string {
 	return string(b)
 }
 
-<<<<<<< Updated upstream
+
 func GenerateUniqueCode(repo database.Repository) (string, error){
-=======
-func GenerateUniqueCode(db *sql.DB) (string, error) {
->>>>>>> Stashed changes
+
 	for {
 		code := GenerateCode(6)
 
