@@ -86,7 +86,7 @@ func main() {
 	Logged := middleware.Logging(handler)
 
 	server := &http.Server{
-		Addr : ":" + ServerPort,
+		Addr:    ":" + ServerPort,
 		Handler: Logged,
 	}
 

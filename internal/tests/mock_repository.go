@@ -13,14 +13,14 @@ type MockRepository struct {
 	ShortCodeExistsCalled bool
 	GetByOriginalCalled   bool
 
-	SaveErr          error
-	GetErr           error
-	IncrementErr     error
+	SaveErr            error
+	GetErr             error
+	IncrementErr       error
 	ShortCodeExistsErr error
-	GetByOriginalErr error
+	GetByOriginalErr   error
 
-	URL              string
-	ExistingURL      *models.Url
+	URL                  string
+	ExistingURL          *models.Url
 	ShortCodeExistsValue bool
 }
 

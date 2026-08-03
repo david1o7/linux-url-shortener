@@ -27,7 +27,7 @@ func Connect(host, port, user, password, dbname, sslmode string) (*sql.DB, error
 func (p *PostgresRepository) SaveUrl(shortCode string, OriginalCode string) error {
 	query := `INSERT INTO urls(originalurl, shortcode) VALUES($1,$2)`
 
-	_, err := p.DB.Exec(query, OriginalCode,shortCode)
+	_, err := p.DB.Exec(query, OriginalCode, shortCode)
 
 	if err != nil {
 		logger.Log.Error(
@@ -38,8 +38,7 @@ func (p *PostgresRepository) SaveUrl(shortCode string, OriginalCode string) erro
 	return err
 }
 
-
-func (p *PostgresRepository) GetUrl(shortcode string) (string, error){
+func (p *PostgresRepository) GetUrl(shortcode string) (string, error) {
 	var original string
 	query := `SELECT originalurl FROM urls WHERE shortcode = $1`
 
@@ -51,8 +50,7 @@ func (p *PostgresRepository) GetUrl(shortcode string) (string, error){
 	return original, err
 }
 
-
-func (p *PostgresRepository) GetByOriginal(original string) (*models.Url, error){
+func (p *PostgresRepository) GetByOriginal(original string) (*models.Url, error) {
 
 	query := `SELECT id, originalurl, shortcode, created_at from urls WHERE originalurl = $1`
 
@@ -77,8 +75,7 @@ func (p *PostgresRepository) GetByOriginal(original string) (*models.Url, error)
 	return &url, nil
 }
 
-
-func (p *PostgresRepository) ShortCodeExist(shortCode string) (bool, error){
+func (p *PostgresRepository) ShortCodeExist(shortCode string) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM urls WHERE shortcode = $1)`
 
 	var exists bool
@@ -95,7 +92,7 @@ func (p *PostgresRepository) IncrementClicks(shortcode string) error {
 	 last_accessed = Now() 
 	 WHERE shortcode = $1`
 
-	 _, err := p.DB.Exec(query, shortcode)
+	_, err := p.DB.Exec(query, shortcode)
 
 	if err != nil {
 		logger.Log.Error(

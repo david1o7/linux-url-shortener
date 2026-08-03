@@ -20,8 +20,7 @@ func GenerateCode(lenght int) string {
 	return string(b)
 }
 
-
-func GenerateUniqueCode(repo database.Repository) (string, error){
+func GenerateUniqueCode(repo database.Repository) (string, error) {
 
 	for {
 		code := GenerateCode(6)

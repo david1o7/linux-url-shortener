@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestLoggingMiddleware(t *testing.T){
+func TestLoggingMiddleware(t *testing.T) {
 	handler := middleware.Logging(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
@@ -20,9 +20,9 @@ func TestLoggingMiddleware(t *testing.T){
 
 	rec := httptest.NewRecorder()
 
-	handler.ServeHTTP(rec,req)
+	handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK{
+	if rec.Code != http.StatusOK {
 
 		t.Fatalf("expected %d gor %d", http.StatusOK, rec.Code)
 	}

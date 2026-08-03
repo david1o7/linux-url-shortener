@@ -6,23 +6,23 @@ import (
 	"time"
 )
 
-type responsewriter struct{
+type responsewriter struct {
 	http.ResponseWriter
 	status int
 }
 
-func (rw *responsewriter) WriteHeader(status int){
+func (rw *responsewriter) WriteHeader(status int) {
 	rw.status = status
 	rw.ResponseWriter.WriteHeader(status)
 }
 
-func Logging(next http.Handler) http.Handler{
+func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
 		rw := &responsewriter{
 			ResponseWriter: w,
-			status: http.StatusOK,
+			status:         http.StatusOK,
 		}
 
 		next.ServeHTTP(rw, r)

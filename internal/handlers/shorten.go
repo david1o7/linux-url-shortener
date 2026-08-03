@@ -57,14 +57,13 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 			return
 		}
 
-
-		code , err:= services.GenerateUniqueCode(repo)
-		if err != nil{
+		code, err := services.GenerateUniqueCode(repo)
+		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
 		err = repo.SaveUrl(code, req.URL)
-		if err != nil{
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -86,9 +85,8 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 	}
 }
 
-
 func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request){
+	return func(w http.ResponseWriter, r *http.Request) {
 		code := strings.TrimPrefix(r.URL.Path, "/")
 
 		url, err := cache.Get(code)
@@ -106,7 +104,7 @@ func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.Handler
 				"Original Url", url,
 			)
 
-			go func(){
+			go func() {
 				err := repo.IncrementClicks(code)
 
 				if err != nil {
@@ -139,11 +137,11 @@ func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.Handler
 		cache.Set(code, original)
 
 		logger.Log.Info(
-				"Redirecting...",
-				"Original Url", original,
-			)
-		
-		go func(){
+			"Redirecting...",
+			"Original Url", original,
+		)
+
+		go func() {
 			err := repo.IncrementClicks(code)
 
 			if err != nil {

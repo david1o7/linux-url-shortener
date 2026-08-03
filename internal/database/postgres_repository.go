@@ -2,7 +2,7 @@ package database
 
 import "database/sql"
 
-type PostgresRepository struct{
+type PostgresRepository struct {
 	DB *sql.DB
 }
 
