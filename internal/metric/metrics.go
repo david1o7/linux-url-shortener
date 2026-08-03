@@ -4,14 +4,14 @@ import "github.com/prometheus/client_golang/prometheus"
 
 var UrlsShortened = prometheus.NewCounter(
 	prometheus.CounterOpts{
-		Name : "urls_shortened_total",
+		Name: "urls_shortened_total",
 		Help: "Total number of url shortened",
 	},
 )
 
 var Redirects = prometheus.NewCounter(
 	prometheus.CounterOpts{
-		Name : "redirect_request_total",
+		Name: "redirect_request_total",
 		Help: "Total redirect requests",
 	},
 )
@@ -19,36 +19,35 @@ var Redirects = prometheus.NewCounter(
 var CacheHits = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Name: "cache_hits_total",
-		Help:"Total cache hits",
+		Help: "Total cache hits",
 	},
 )
 var CacheMisses = prometheus.NewCounter(
 	prometheus.CounterOpts{
-		Name:"cache_misses_total",
-		Help:"Total Cache misses", 
+		Name: "cache_misses_total",
+		Help: "Total Cache misses",
 	},
 )
 var RateLimited = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Name: "rate_limited_request_total",
-		Help:"Total rate limited requests",
+		Help: "Total rate limited requests",
 	},
 )
 var InvalidUrls = prometheus.NewCounter(
 	prometheus.CounterOpts{
-		Name:"Invalid_urls_total",
+		Name: "Invalid_urls_total",
 		Help: "Total invalid url requests",
 	},
 )
 
-
 var RequestCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Total number of HTTP requests.",
-		},
-		[]string{"method", "path"},
-	)
+	prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Total number of HTTP requests.",
+	},
+	[]string{"method", "path"},
+)
 
 var RequestDuration = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
@@ -63,6 +62,7 @@ var RequestDuration = prometheus.NewHistogramVec(
 		"path",
 	},
 )
+
 func Init() {
 	prometheus.MustRegister(
 		UrlsShortened,

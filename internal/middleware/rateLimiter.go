@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type RateLimiter struct{
+type RateLimiter struct {
 	Client *redis.Client
 }
 
@@ -21,7 +21,7 @@ func NewRateLimiter(client *redis.Client) *RateLimiter {
 }
 
 func (r *RateLimiter) Limit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request){
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
 		ip := req.RemoteAddr
@@ -30,27 +30,27 @@ func (r *RateLimiter) Limit(next http.Handler) http.Handler {
 
 		count, err := r.Client.Incr(ctx, key).Result()
 
-		if err != nil{
+		if err != nil {
 			http.Error(w, "Redis Error", 500)
 			return
 		}
 
-		if count == 1{
+		if count == 1 {
 			r.Client.Expire(ctx, key, time.Minute)
 		}
 
 		if count > 100 {
-			
-		logger.Log.Warn(
-			"Rate Limit Exceeded",
-			"ip", req.RemoteAddr,
-		)
-		
-		metrics.RateLimited.Inc()
+
+			logger.Log.Warn(
+				"Rate Limit Exceeded",
+				"ip", req.RemoteAddr,
+			)
+
+			metrics.RateLimited.Inc()
 
 			http.Error(w, "Too Many Request", http.StatusTooManyRequests)
-				return
+			return
 		}
-		next.ServeHTTP(w,req)
+		next.ServeHTTP(w, req)
 	})
 }

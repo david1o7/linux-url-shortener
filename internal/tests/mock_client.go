@@ -6,14 +6,14 @@ import (
 
 type MockClient struct {
 	Response *http.Response
-	Err error
+	Err      error
 }
 
-func (m *MockClient) Do(req *http.Request)(*http.Response,error){
+func (m *MockClient) Do(req *http.Request) (*http.Response, error) {
 
-	if m.Err!=nil{
-		return nil,m.Err
+	if m.Err != nil {
+		return nil, m.Err
 	}
 
-	return m.Response,nil
+	return m.Response, nil
 }

@@ -9,10 +9,9 @@ import (
 	"testing"
 )
 
-func TestValidate(t *testing.T){
+func TestValidate(t *testing.T) {
 
-	tests:=[]struct{
-
+	tests := []struct {
 		name string
 
 		url string
@@ -22,68 +21,66 @@ func TestValidate(t *testing.T){
 		err error
 
 		expected bool
-
 	}{
 		{
-			name:"Valid URL",
+			name: "Valid URL",
 
-			url:"https://google.com",
+			url: "https://google.com",
 
-			response:http.StatusOK,
+			response: http.StatusOK,
 
-			expected:true,
-		}, 
-
-		{
-			name:"404",
-
-			url:"https://babble2234.com",
-
-			response:http.StatusNotFound,
-
-			expected:false,
+			expected: true,
 		},
 
 		{
-			name:"Timeout",
+			name: "404",
 
-			url:"https://TimeOutError.com",
+			url: "https://babble2234.com",
 
-			err:context.DeadlineExceeded,
+			response: http.StatusNotFound,
 
-			expected:false,
+			expected: false,
 		},
 
 		{
-			name:"FTP",
+			name: "Timeout",
 
-			url:"ftp://google.com",
+			url: "https://TimeOutError.com",
 
-			expected:false,
+			err: context.DeadlineExceeded,
+
+			expected: false,
 		},
 
 		{
-			name:"Invalid URL",
+			name: "FTP",
 
-			url:"hello",
+			url: "ftp://google.com",
 
-			expected:false,
+			expected: false,
 		},
 
+		{
+			name: "Invalid URL",
+
+			url: "hello",
+
+			expected: false,
+		},
 	}
 
-	for _,tt:=range tests{
+	for _, tt := range tests {
 
-		client:=&MockClient{
+		client := &MockClient{
 
-			Response:&http.Response{
+			Response: &http.Response{
 
-				StatusCode:tt.response,
+				StatusCode: tt.response,
 
-				Body:http.NoBody,
+				Body: http.NoBody,
 			},
 
-			Err:tt.err,
+			Err: tt.err,
 		}
 
 		resolver := &MockResolver{
@@ -92,11 +89,11 @@ func TestValidate(t *testing.T){
 			},
 		}
 
-		v:=validator.NewURLValidator(client, resolver, 10)
+		v := validator.NewURLValidator(client, resolver, 10)
 
-		got:=v.Validate(tt.url)
+		got := v.Validate(tt.url)
 
-		if got!=tt.expected{
+		if got != tt.expected {
 
 			t.Fatalf("%s expected %v got %v",
 				tt.name,
@@ -109,15 +106,15 @@ func TestValidate(t *testing.T){
 	}
 }
 
-func TestRejectLoopback(t *testing.T){
+func TestRejectLoopback(t *testing.T) {
 
-	v:=validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &MockResolver{
 		IPs: []net.IP{
 			net.ParseIP("127.0.0.1"),
 		},
 	}, 10)
 
-	if v.Validate("http://127.0.0.1"){
+	if v.Validate("http://127.0.0.1") {
 
 		t.Fatal("expected loopback to fail")
 
@@ -125,15 +122,15 @@ func TestRejectLoopback(t *testing.T){
 
 }
 
-func TestRejectPrivateIP(t *testing.T){
+func TestRejectPrivateIP(t *testing.T) {
 
-	v:= validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &MockResolver{
 		IPs: []net.IP{
 			net.ParseIP("192.168.1.1"),
 		},
 	}, 10)
 
-	if v.Validate("http://192.168.1.1"){
+	if v.Validate("http://192.168.1.1") {
 
 		t.Fatal("expected private ip to fail")
 
@@ -141,15 +138,15 @@ func TestRejectPrivateIP(t *testing.T){
 
 }
 
-func TestRejectUnsupportedScheme(t *testing.T){
+func TestRejectUnsupportedScheme(t *testing.T) {
 
-	v:=validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &MockResolver{
 		IPs: []net.IP{
 			net.ParseIP("8.8.8.8"),
 		},
 	}, 10)
 
-	if v.Validate("ftp://example.com"){
+	if v.Validate("ftp://example.com") {
 
 		t.Fatal("expected ftp to fail")
 
@@ -157,13 +154,13 @@ func TestRejectUnsupportedScheme(t *testing.T){
 
 }
 
-func TestNetworkFailure(t *testing.T){
+func TestNetworkFailure(t *testing.T) {
 
-	v:=validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &MockResolver{
 		Err: errors.New("Dns failed"),
 	}, 10)
 
-	if v.Validate("https://google.com"){
+	if v.Validate("https://google.com") {
 
 		t.Fatal("expected validation failure")
 

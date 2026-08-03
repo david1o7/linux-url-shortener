@@ -10,7 +10,7 @@ import (
 
 func Connect(host, port, user, password, dbname, sslmode string) (*sql.DB, error) {
 
-	connStr := string("host="+host+" port="+port +" user=" +user+" password="+ password+ " dbname="+ dbname+ " sslmode="+ sslmode)
+	connStr := string("host=" + host + " port=" + port + " user=" + user + " password=" + password + " dbname=" + dbname + " sslmode=" + sslmode)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -27,31 +27,42 @@ func Connect(host, port, user, password, dbname, sslmode string) (*sql.DB, error
 func (p *PostgresRepository) SaveUrl(shortCode string, OriginalCode string) error {
 	query := `INSERT INTO urls(originalurl, shortcode) VALUES($1,$2)`
 
+<<<<<<< Updated upstream
 	_, err := p.DB.Exec(query, OriginalCode,shortCode)
+=======
+	_, err := db.Exec(query, OriginalCode, shortCode)
+>>>>>>> Stashed changes
 
-
-	if err != nil{
-	logger.Log.Error(
-		"Database query Error",
-		"Error", err,
-	)
+	if err != nil {
+		logger.Log.Error(
+			"Database query Error",
+			"Error", err,
+		)
 	}
 	return err
 }
 
+<<<<<<< Updated upstream
 func (p *PostgresRepository) GetUrl(shortcode string) (string, error){
+=======
+func GetUrl(db *sql.DB, shortcode string) (string, error) {
+>>>>>>> Stashed changes
 	var original string
 	query := `SELECT originalurl FROM urls WHERE shortcode = $1`
 
 	err := p.DB.QueryRow(query, shortcode).Scan(&original)
 
-	if err != nil{
+	if err != nil {
 		return " ", err
 	}
 	return original, err
 }
 
+<<<<<<< Updated upstream
 func (p *PostgresRepository) GetByOriginal(original string) (*models.Url, error){
+=======
+func GetByOriginal(db *sql.DB, original string) (*models.Url, error) {
+>>>>>>> Stashed changes
 	query := `SELECT id, originalurl, shortcode, created_at from urls WHERE originalurl = $1`
 
 	row := p.DB.QueryRow(query, original)
@@ -64,18 +75,22 @@ func (p *PostgresRepository) GetByOriginal(original string) (*models.Url, error)
 		&url.ShortCode,
 		&url.CreatedAt,
 	)
-	if err == sql.ErrNoRows{
-		return nil, nil	
+	if err == sql.ErrNoRows {
+		return nil, nil
 	}
 
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	return &url, nil
 }
 
+<<<<<<< Updated upstream
 func (p *PostgresRepository) ShortCodeExist(shortCode string) (bool, error){
+=======
+func ShortCodeExist(db *sql.DB, shortCode string) (bool, error) {
+>>>>>>> Stashed changes
 	query := `SELECT EXISTS(SELECT 1 FROM urls WHERE shortcode = $1)`
 
 	var exists bool
@@ -92,13 +107,17 @@ func (p *PostgresRepository) IncrementClicks(shortcode string) error {
 	 last_accessed = Now() 
 	 WHERE shortcode = $1`
 
+<<<<<<< Updated upstream
 	 _, err := p.DB.Exec(query, shortcode)
+=======
+	_, err := db.Exec(query, shortcode)
+>>>>>>> Stashed changes
 
-	if err != nil{
-	 logger.Log.Error(
-		"Database query Error",
-		"Error", err,
-	 )
+	if err != nil {
+		logger.Log.Error(
+			"Database query Error",
+			"Error", err,
+		)
 	}
 
 	logger.Log.Info(
@@ -106,5 +125,5 @@ func (p *PostgresRepository) IncrementClicks(shortcode string) error {
 		"Short code", shortcode,
 	)
 
-	 return err
+	return err
 }

@@ -13,27 +13,27 @@ type HTTPClient interface {
 }
 
 type URLValidator struct {
-	client HTTPClient
+	client   HTTPClient
 	resolver DNSResolver
-	timeout time.Duration
+	timeout  time.Duration
 }
 
 func NewURLValidator(client HTTPClient, resolver DNSResolver, timeout int) *URLValidator {
-    if client == nil {
-        client = &http.Client{
-            Timeout: time.Duration(timeout) * time.Second,
-        }
-    }
+	if client == nil {
+		client = &http.Client{
+			Timeout: time.Duration(timeout) * time.Second,
+		}
+	}
 
-    if resolver == nil {
-        resolver = &RealResolver{}
-    }
+	if resolver == nil {
+		resolver = &RealResolver{}
+	}
 
-    return &URLValidator{
-        client:   client,
-        resolver: resolver,
-        timeout:  time.Duration(timeout) * time.Second,
-    }
+	return &URLValidator{
+		client:   client,
+		resolver: resolver,
+		timeout:  time.Duration(timeout) * time.Second,
+	}
 }
 
 func (v *URLValidator) Validate(rawURL string) bool {

@@ -8,38 +8,38 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type HealthHandler struct{
-	DB *sql.DB
+type HealthHandler struct {
+	DB    *sql.DB
 	Redis *redis.Client
 }
 
-type HealthStatus struct{
-	Status string `json:"status"`
+type HealthStatus struct {
+	Status   string `json:"status"`
 	Database string `json:"db"`
-	Redis string `json:"redis"`
+	Redis    string `json:"redis"`
 }
 
 func NewHealthHandler(db *sql.DB, redis *redis.Client) *HealthHandler {
 	return &HealthHandler{
-		DB: db,
+		DB:    db,
 		Redis: redis,
 	}
 }
 
-func (h *HealthHandler) Health(w http.ResponseWriter , r *http.Request) {
+func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 
 	response := HealthStatus{
-		Status: "healthy",
+		Status:   "healthy",
 		Database: "up",
-		Redis: "up",
+		Redis:    "up",
 	}
 
-	if err := h.DB.Ping(); err != nil{
+	if err := h.DB.Ping(); err != nil {
 		response.Database = "down"
 		response.Status = "unhealthy"
 	}
 
-	if err := h.Redis.Ping(r.Context()).Err(); err != nil{
+	if err := h.Redis.Ping(r.Context()).Err(); err != nil {
 		response.Status = "unhealthy"
 		response.Redis = "down"
 	}

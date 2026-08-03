@@ -16,21 +16,21 @@ type RedisCache struct {
 }
 
 func NewRedisCache() *RedisCache {
-	
+
 	var err = godotenv.Load()
 
-	if err != nil{
-	logger.Log.Error(
-		".env file error",
-		"Error", err,
-	)
+	if err != nil {
+		logger.Log.Error(
+			".env file error",
+			"Error", err,
+		)
 	}
 
 	RedisAddr := os.Getenv("REDIS_ADDR")
 
 	client := redis.NewClient(&redis.Options{
-		Addr:RedisAddr,
-		DB: 0,
+		Addr: RedisAddr,
+		DB:   0,
 	})
 
 	return &RedisCache{
@@ -49,6 +49,6 @@ func (r *RedisCache) Set(key, value string) error {
 
 }
 
-func (r *RedisCache) Get(key string) (string , error){
+func (r *RedisCache) Get(key string) (string, error) {
 	return r.Client.Get(ctx, key).Result()
 }

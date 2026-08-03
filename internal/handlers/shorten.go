@@ -17,11 +17,11 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Request struct{
+type Request struct {
 	URL string `json:"url"`
 }
 
-type Response struct{
+type Response struct {
 	ShortCode string `json:"short_code"`
 }
 
@@ -32,13 +32,13 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 
 		err := godotenv.Load()
 
-		if err != nil{
+		if err != nil {
 			logger.Log.Error(
 				".env file error",
-				"Error", err, 
+				"Error", err,
 			)
 			http.Error(w, "Env file not found", http.StatusInternalServerError)
-			
+
 			return
 		}
 
@@ -46,17 +46,18 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 
 		err = json.NewDecoder(r.Body).Decode(&req)
 
-		if err != nil{
+		if err != nil {
 			http.Error(w, "Invalid content", http.StatusBadRequest)
 			return
 		}
 
-		if !validator.Validate(req.URL){
+		if !validator.Validate(req.URL) {
 			http.Error(w, "Invalid Url or cant be found", http.StatusBadRequest)
 			metrics.InvalidUrls.Inc()
-			return 
+			return
 		}
 
+<<<<<<< Updated upstream
 		code , err:= services.GenerateUniqueCode(repo)
 		if err != nil{
 			http.Error(w, err.Error(), 500)
@@ -64,6 +65,15 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 		}
 		err = repo.SaveUrl(code, req.URL)
 		if err != nil{
+=======
+		code, err := services.GenerateUniqueCode(db)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		err = database.SaveUrl(db, code, req.URL)
+		if err != nil {
+>>>>>>> Stashed changes
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -85,29 +95,39 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 	}
 }
 
+<<<<<<< Updated upstream
 func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request){
+=======
+func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+>>>>>>> Stashed changes
 		code := strings.TrimPrefix(r.URL.Path, "/")
 
-		url , err := cache.Get(code)
+		url, err := cache.Get(code)
 
-		if err == nil{
+		if err == nil {
 			logger.Log.Info(
 				"cache hit",
 				"Original Url", url,
 			)
 
 			metrics.CacheHits.Inc()
-			
+
 			logger.Log.Info(
 				"Redirecting...",
 				"Original Url", url,
 			)
 
+<<<<<<< Updated upstream
 			go func(){
 				err := repo.IncrementClicks(code)
+=======
+			go func() {
+				err := database.IncrementClicks(db, code)
+>>>>>>> Stashed changes
 
-			if err != nil{
+				if err != nil {
 					logger.Log.Error(
 						"Failed to increment clicks",
 						"Shortcode", code,
@@ -116,7 +136,7 @@ func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.Handler
 				}
 			}()
 
-			http.Redirect(w,r,url, http.StatusFound)
+			http.Redirect(w, r, url, http.StatusFound)
 			metrics.Redirects.Inc()
 			return
 		}
@@ -129,30 +149,38 @@ func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.Handler
 
 		original, err := repo.GetUrl(code)
 
-		if err != nil || original == ""{
+		if err != nil || original == "" {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		cache.Set(code, original)
 
-		
 		logger.Log.Info(
+<<<<<<< Updated upstream
 				"Redirecting...",
 				"Original Url", original,
 			)
 		
 		go func(){
 			err := repo.IncrementClicks(code)
+=======
+			"Redirecting...",
+			"Original Url", original,
+		)
 
-			if err != nil{
-					logger.Log.Error(
-						"Failed to increment clicks",
-						"Shortcode", code,
-						"error", err,
-					)
-				}
-			}()
+		go func() {
+			err := database.IncrementClicks(db, code)
+>>>>>>> Stashed changes
+
+			if err != nil {
+				logger.Log.Error(
+					"Failed to increment clicks",
+					"Shortcode", code,
+					"error", err,
+				)
+			}
+		}()
 
 		http.Redirect(w, r, original, http.StatusFound)
 	}

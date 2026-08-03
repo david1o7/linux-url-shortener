@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
- var Log = slog.New(
+var Log = slog.New(
 	slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}),
- )
+)

@@ -22,12 +22,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func main(){
+func main() {
 	metrics.Init()
 
 	err := godotenv.Load()
 
-	if err != nil{
+	if err != nil {
 		logger.Log.Error(
 			".Env file Error",
 			"Error", err,
@@ -51,14 +51,14 @@ func main(){
 	}
 	ServerPort := os.Getenv("PORT")
 
-	db , err := database.Connect(host, port , user, password, db_name, db_sslmode)
-	if err != nil{
+	db, err := database.Connect(host, port, user, password, db_name, db_sslmode)
+	if err != nil {
 		panic(err)
 	}
 
 	logger.Log.Info(
 		"DB connection status",
-		"Connection" , "Successful",
+		"Connection", "Successful",
 	)
 	resolver := validator.RealResolver{}
 
@@ -86,23 +86,28 @@ func main(){
 	Logged := middleware.Logging(handler)
 
 	server := &http.Server{
+<<<<<<< Updated upstream
 		Addr : ":" + ServerPort,
 		Handler: Logged,
+=======
+		Addr:    ":" + ServerPort,
+		Handler: handler,
+>>>>>>> Stashed changes
 	}
 
-	go func(){
+	go func() {
 
-	logger.Log.Info(
-		"Server started",
-		"port", ":"+ServerPort,
-	)
-
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed{
-		logger.Log.Error(
-			"Server failed",
-			"error", err.Error(),
+		logger.Log.Info(
+			"Server started",
+			"port", ":"+ServerPort,
 		)
-	}
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Log.Error(
+				"Server failed",
+				"error", err.Error(),
+			)
+		}
 	}()
 
 	quit := make(chan os.Signal, 1)
@@ -116,18 +121,18 @@ func main(){
 
 	logger.Log.Info("Shutdown signal received")
 
-	ctx , cancel := context.WithTimeout(
+	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		time.Duration(shutdownTimeout) * time.Second,
+		time.Duration(shutdownTimeout)*time.Second,
 	)
 
 	defer cancel()
 
 	logger.Log.Info(
-    "Waiting for active requests to finish...",
+		"Waiting for active requests to finish...",
 	)
 
-	if err := server.Shutdown(ctx); err!= nil{
+	if err := server.Shutdown(ctx); err != nil {
 
 		logger.Log.Error(
 			"Graceful shutdown failed",
@@ -137,25 +142,25 @@ func main(){
 
 	if err := redisCache.Client.Close(); err != nil {
 
-    logger.Log.Error(
-        "Redis close failed",
-        "error",
-        err.Error(),
-    )
+		logger.Log.Error(
+			"Redis close failed",
+			"error",
+			err.Error(),
+		)
 	} else {
-    logger.Log.Info("Redis connection closed")
+		logger.Log.Info("Redis connection closed")
 	}
 
 	if err := db.Close(); err != nil {
 
-    logger.Log.Error(
-        "Database close failed",
-        "error",
-        err.Error(),
-    )
+		logger.Log.Error(
+			"Database close failed",
+			"error",
+			err.Error(),
+		)
 
 	} else {
-    logger.Log.Info("DB connection closed")
+		logger.Log.Info("DB connection closed")
 	}
 
 	logger.Log.Info("Server shutdown complete")

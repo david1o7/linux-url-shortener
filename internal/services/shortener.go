@@ -7,27 +7,30 @@ import (
 	"math/big"
 )
 
-
 func GenerateCode(lenght int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	b := make([]byte, 6)
 
 	for i := range b {
-		num , _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
 		b[i] = charset[num.Int64()]
 	}
 
 	return string(b)
 }
 
+<<<<<<< Updated upstream
 func GenerateUniqueCode(repo database.Repository) (string, error){
+=======
+func GenerateUniqueCode(db *sql.DB) (string, error) {
+>>>>>>> Stashed changes
 	for {
 		code := GenerateCode(6)
 
 		exists, err := repo.ShortCodeExist(code)
 
-		if err != nil{
+		if err != nil {
 			return "", err
 		}
 
