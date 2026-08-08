@@ -2,8 +2,8 @@ package tests
 
 import (
 	"Linux-url-shortener/internal/models"
-	"testing"
 	"Linux-url-shortener/internal/tests/mocks"
+	"testing"
 )
 
 func TestMockRepository_SaveURL(t *testing.T) {

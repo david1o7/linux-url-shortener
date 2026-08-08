@@ -38,7 +38,7 @@ func TestGenerateCode_ValidCharacters(t *testing.T) {
 	}
 }
 
-func TestGeneratedUniqueCode_AvailableCode(t *testing.T){
+func TestGeneratedUniqueCode_AvailableCode(t *testing.T) {
 	repo := &mocks.MockRepository{
 		ShortCodeExistsValue: false,
 	}
@@ -48,7 +48,6 @@ func TestGeneratedUniqueCode_AvailableCode(t *testing.T){
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-
 
 	if code == "" {
 		t.Fatal("expected a generated code")
@@ -73,19 +72,19 @@ func TestGeneratedUniqueCode_RepositoryError(t *testing.T) {
 		ShortCodeExistsErr: mocks.ErrDatabase,
 	}
 
-	code , err := services.GenerateUniqueCode(repo)
+	code, err := services.GenerateUniqueCode(repo)
 
-	if err == nil{
+	if err == nil {
 		t.Fatalf("expected repository error")
 	}
 
-	if code != ""{
+	if code != "" {
 		t.Fatalf("expected empty code, got %q", code)
 	}
 
 }
 
-func TestGenerateUniqueCode_Collision(t *testing.T){
+func TestGenerateUniqueCode_Collision(t *testing.T) {
 
 	repo := &mocks.MockRepository{
 		ShortCodeExistsSequence: []bool{true, true, false},
@@ -93,11 +92,11 @@ func TestGenerateUniqueCode_Collision(t *testing.T){
 
 	code, err := services.GenerateUniqueCode(repo)
 
-	if err != nil{
+	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if code == ""{
+	if code == "" {
 		t.Fatalf("expected a generated code")
 	}
 
