@@ -3,13 +3,14 @@ package tests
 import (
 	"Linux-url-shortener/internal/models"
 	"testing"
+	"Linux-url-shortener/internal/tests/mocks"
 )
 
 func TestMockRepository_SaveURL(t *testing.T) {
 
-	repo := &MockRepository{}
+	repo := &mocks.MockRepository{}
 
-	err := repo.SaveURL("abc123", "https://google.com")
+	err := repo.SaveUrl("abc123", "https://google.com")
 
 	if err != nil {
 		t.Fatal(err)
@@ -22,11 +23,11 @@ func TestMockRepository_SaveURL(t *testing.T) {
 
 func TestMockRepository_SaveURL_Error(t *testing.T) {
 
-	repo := &MockRepository{
-		SaveErr: ErrDatabase,
+	repo := &mocks.MockRepository{
+		SaveErr: mocks.ErrDatabase,
 	}
 
-	err := repo.SaveURL("abc", "https://google.com")
+	err := repo.SaveUrl("abc", "https://google.com")
 
 	if err == nil {
 		t.Fatal("expected database error")
@@ -35,11 +36,11 @@ func TestMockRepository_SaveURL_Error(t *testing.T) {
 
 func TestMockRepository_GetURL(t *testing.T) {
 
-	repo := &MockRepository{
+	repo := &mocks.MockRepository{
 		URL: "https://google.com",
 	}
 
-	url, err := repo.GetURL("abc")
+	url, err := repo.GetUrl("abc")
 
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +57,7 @@ func TestMockRepository_GetURL(t *testing.T) {
 
 func TestMockRepository_IncrementClicks(t *testing.T) {
 
-	repo := &MockRepository{}
+	repo := &mocks.MockRepository{}
 
 	err := repo.IncrementClicks("abc")
 
@@ -71,11 +72,11 @@ func TestMockRepository_IncrementClicks(t *testing.T) {
 
 func TestMockRepository_ShortCodeExists(t *testing.T) {
 
-	repo := &MockRepository{
+	repo := &mocks.MockRepository{
 		ShortCodeExistsValue: true,
 	}
 
-	ok, err := repo.ShortCodeExists("abc")
+	ok, err := repo.ShortCodeExist("abc")
 
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +97,7 @@ func TestMockRepository_GetByOriginal(t *testing.T) {
 		Original: "https://google.com",
 	}
 
-	repo := &MockRepository{
+	repo := &mocks.MockRepository{
 		ExistingURL: expected,
 	}
 

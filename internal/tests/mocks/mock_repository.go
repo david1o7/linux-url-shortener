@@ -1,4 +1,4 @@
-package tests
+package mocks
 
 import (
 	"errors"
@@ -22,14 +22,16 @@ type MockRepository struct {
 	URL                  string
 	ExistingURL          *models.Url
 	ShortCodeExistsValue bool
+	ShortCodeExistsSequence []bool
+	ShortCodeExistsCalls    int
 }
 
-func (m *MockRepository) SaveURL(shortCode, originalURL string) error {
+func (m *MockRepository) SaveUrl(shortCode, originalURL string) error {
 	m.SaveCalled = true
 	return m.SaveErr
 }
 
-func (m *MockRepository) GetURL(shortCode string) (string, error) {
+func (m *MockRepository) GetUrl(shortCode string) (string, error) {
 	m.GetCalled = true
 
 	if m.GetErr != nil {
@@ -54,12 +56,22 @@ func (m *MockRepository) GetByOriginal(original string) (*models.Url, error) {
 	return m.ExistingURL, nil
 }
 
-func (m *MockRepository) ShortCodeExists(code string) (bool, error) {
+func (m *MockRepository) ShortCodeExist(code string) (bool, error) {
 	m.ShortCodeExistsCalled = true
 
-	if m.ShortCodeExistsErr != nil {
+	if m.ShortCodeExistsErr != nil{
 		return false, m.ShortCodeExistsErr
 	}
+
+	if m.ShortCodeExistsCalls < len(m.ShortCodeExistsSequence) {
+		result := m.ShortCodeExistsSequence[m.ShortCodeExistsCalls]
+
+		m.ShortCodeExistsCalls++
+
+		return result, nil
+	}
+
+	m.ShortCodeExistsCalls++
 
 	return m.ShortCodeExistsValue, nil
 }

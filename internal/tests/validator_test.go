@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"Linux-url-shortener/internal/tests/mocks"
 	"Linux-url-shortener/internal/validator"
 	"context"
 	"errors"
@@ -71,7 +72,7 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tests {
 
-		client := &MockClient{
+		client := &mocks.MockClient{
 
 			Response: &http.Response{
 
@@ -83,7 +84,7 @@ func TestValidate(t *testing.T) {
 			Err: tt.err,
 		}
 
-		resolver := &MockResolver{
+		resolver := &mocks.MockResolver{
 			IPs: []net.IP{
 				net.ParseIP("8.8.8.8"),
 			},
@@ -108,7 +109,7 @@ func TestValidate(t *testing.T) {
 
 func TestRejectLoopback(t *testing.T) {
 
-	v := validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &mocks.MockResolver{
 		IPs: []net.IP{
 			net.ParseIP("127.0.0.1"),
 		},
@@ -124,7 +125,7 @@ func TestRejectLoopback(t *testing.T) {
 
 func TestRejectPrivateIP(t *testing.T) {
 
-	v := validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &mocks.MockResolver{
 		IPs: []net.IP{
 			net.ParseIP("192.168.1.1"),
 		},
@@ -140,7 +141,7 @@ func TestRejectPrivateIP(t *testing.T) {
 
 func TestRejectUnsupportedScheme(t *testing.T) {
 
-	v := validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &mocks.MockResolver{
 		IPs: []net.IP{
 			net.ParseIP("8.8.8.8"),
 		},
@@ -156,7 +157,7 @@ func TestRejectUnsupportedScheme(t *testing.T) {
 
 func TestNetworkFailure(t *testing.T) {
 
-	v := validator.NewURLValidator(nil, &MockResolver{
+	v := validator.NewURLValidator(nil, &mocks.MockResolver{
 		Err: errors.New("Dns failed"),
 	}, 10)
 

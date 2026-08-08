@@ -3,17 +3,25 @@ package services
 import (
 	"Linux-url-shortener/internal/database"
 	"crypto/rand"
+	"os"
 
 	"math/big"
 )
 
+var maxAttempts = os.Getenv("maxAttempts")
+
 func GenerateCode(lenght int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	b := make([]byte, 6)
+	b := make([]byte, lenght)
 
 	for i := range b {
-		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+
+		if err != nil {
+			panic(err)
+		}
+
 		b[i] = charset[num.Int64()]
 	}
 
