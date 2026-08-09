@@ -115,3 +115,67 @@ func TestMockRepository_GetByOriginal(t *testing.T) {
 		t.Fatal("method not called")
 	}
 }
+
+func TestMockRepository_GetURL_Error(t *testing.T) {
+	repo := &mocks.MockRepository{
+		GetErr: mocks.ErrDatabase,
+	}
+
+	_, err := repo.GetUrl("abc")
+
+	if err == nil {
+		t.Fatal("expected database error")
+	}
+
+	if !repo.GetCalled {
+		t.Fatal("expected GetUrl to be called")
+	}
+}
+
+func TestMockRepository_IncrementClicks_Error(t *testing.T) {
+	repo := &mocks.MockRepository{
+		IncrementErr: mocks.ErrDatabase,
+	}
+
+	err := repo.IncrementClicks("abc")
+
+	if err == nil {
+		t.Fatal("expected database error")
+	}
+
+	if !repo.IncrementCalled {
+		t.Fatal("expected IncrementClicks to be called")
+	}
+}
+
+func TestMockRepository_GetByOriginal_Error(t *testing.T) {
+	repo := &mocks.MockRepository{
+		GetByOriginalErr: mocks.ErrDatabase,
+	}
+
+	_, err := repo.GetByOriginal("https://google.com")
+
+	if err == nil {
+		t.Fatal("expected database error")
+	}
+
+	if !repo.GetByOriginalCalled {
+		t.Fatal("expected GetByOriginal to be called")
+	}
+}
+
+func TestMockRepository_ShortCodeExists_Error(t *testing.T) {
+	repo := &mocks.MockRepository{
+		ShortCodeExistsErr: mocks.ErrDatabase,
+	}
+
+	_, err := repo.ShortCodeExist("abc")
+
+	if err == nil {
+		t.Fatal("expected database error")
+	}
+
+	if !repo.ShortCodeExistsCalled {
+		t.Fatal("expected ShortCodeExist to be called")
+	}
+}

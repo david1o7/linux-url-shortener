@@ -168,3 +168,85 @@ func TestNetworkFailure(t *testing.T) {
 	}
 
 }
+
+func TestRejectMulticastIP(t *testing.T) {
+	v := validator.NewURLValidator(
+		nil,
+		&mocks.MockResolver{
+			IPs: []net.IP{
+				net.ParseIP("224.0.0.1"),
+			},
+		},
+		10,
+	)
+
+	if v.Validate("http://example.com") {
+		t.Fatal("expected multicast IP to fail")
+	}
+}
+
+func TestRejectUnspecifiedIP(t *testing.T) {
+	v := validator.NewURLValidator(
+		nil,
+		&mocks.MockResolver{
+			IPs: []net.IP{
+				net.ParseIP("0.0.0.0"),
+			},
+		},
+		10,
+	)
+
+	if v.Validate("http://example.com") {
+		t.Fatal("expected unspecified IP to fail")
+	}
+}
+
+func TestValidateRedirectResponse(t *testing.T) {
+	client := &mocks.MockClient{
+		Response: &http.Response{
+			StatusCode: http.StatusFound,
+			Body:       http.NoBody,
+		},
+	}
+
+	resolver := &mocks.MockResolver{
+		IPs: []net.IP{
+			net.ParseIP("8.8.8.8"),
+		},
+	}
+
+	v := validator.NewURLValidator(
+		client,
+		resolver,
+		10,
+	)
+
+	if !v.Validate("https://example.com") {
+		t.Fatal("expected 3xx response to be accepted")
+	}
+}
+
+func TestValidateServerError(t *testing.T) {
+	client := &mocks.MockClient{
+		Response: &http.Response{
+			StatusCode: http.StatusInternalServerError,
+			Body:       http.NoBody,
+		},
+	}
+
+	resolver := &mocks.MockResolver{
+		IPs: []net.IP{
+			net.ParseIP("8.8.8.8"),
+		},
+	}
+
+	v := validator.NewURLValidator(
+		client,
+		resolver,
+		10,
+	)
+
+	if v.Validate("https://example.com") {
+		t.Fatal("expected 500 response to fail")
+	}
+}

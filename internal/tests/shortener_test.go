@@ -20,6 +20,17 @@ func TestGenerateCode(t *testing.T) {
 	}
 }
 
+func TestGenerateCode_ZeroLength(t *testing.T) {
+	code := services.GenerateCode(0)
+
+	if code != "" {
+		t.Fatalf(
+			"expected empty code, got %q",
+			code,
+		)
+	}
+}
+
 func TestGenerateCode_ValidCharacters(t *testing.T) {
 
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -104,6 +115,29 @@ func TestGenerateUniqueCode_Collision(t *testing.T) {
 		t.Fatalf(
 			"expected 3 existence checks, got %d",
 			repo.ShortCodeExistsCalls,
+		)
+	}
+}
+
+func TestGenerateUniqueCode_ReturnsRepositoryError(t *testing.T) {
+	repo := &mocks.MockRepository{
+		ShortCodeExistsErr: mocks.ErrDatabase,
+	}
+
+	code, err := services.GenerateUniqueCode(repo)
+
+	if err != mocks.ErrDatabase {
+		t.Fatalf(
+			"expected %v, got %v",
+			mocks.ErrDatabase,
+			err,
+		)
+	}
+
+	if code != "" {
+		t.Fatalf(
+			"expected empty code, got %q",
+			code,
 		)
 	}
 }
