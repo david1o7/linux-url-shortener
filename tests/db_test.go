@@ -2,7 +2,7 @@ package tests
 
 import (
 	"Linux-url-shortener/internal/models"
-	"Linux-url-shortener/internal/tests/mocks"
+	"Linux-url-shortener/tests/mocks"
 	"testing"
 )
 

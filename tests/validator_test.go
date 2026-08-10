@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"Linux-url-shortener/internal/tests/mocks"
 	"Linux-url-shortener/internal/validator"
+	"Linux-url-shortener/tests/mocks"
 	"context"
 	"errors"
 	"net"

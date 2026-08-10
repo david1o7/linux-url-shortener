@@ -24,6 +24,7 @@ type MockRepository struct {
 	ShortCodeExistsValue    bool
 	ShortCodeExistsSequence []bool
 	ShortCodeExistsCalls    int
+	ShortCodeExistFunc      func(string) (bool, error)
 }
 
 func (m *MockRepository) SaveUrl(shortCode, originalURL string) error {
@@ -59,6 +60,10 @@ func (m *MockRepository) GetByOriginal(original string) (*models.Url, error) {
 func (m *MockRepository) ShortCodeExist(code string) (bool, error) {
 	m.ShortCodeExistsCalled = true
 
+	if m.ShortCodeExistFunc != nil {
+		return m.ShortCodeExistFunc(code)
+	}
+
 	if m.ShortCodeExistsErr != nil {
 		return false, m.ShortCodeExistsErr
 	}
@@ -73,7 +78,7 @@ func (m *MockRepository) ShortCodeExist(code string) (bool, error) {
 
 	m.ShortCodeExistsCalls++
 
-	return m.ShortCodeExistsValue, nil
+	return m.ShortCodeExistsValue, m.ShortCodeExistsErr
 }
 
 var ErrDatabase = errors.New("database error")

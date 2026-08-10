@@ -3,12 +3,16 @@ package services
 import (
 	"Linux-url-shortener/internal/database"
 	"crypto/rand"
-	"os"
+	"errors"
 
 	"math/big"
 )
 
-var maxAttempts = os.Getenv("maxAttempts")
+var ErrMaxCodeGenerationAttempts = errors.New(
+	"Maximum shortcode generation attempts exceeded",
+)
+
+const DefaultMaxAttempts = 10
 
 func GenerateCode(lenght int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -28,9 +32,13 @@ func GenerateCode(lenght int) string {
 	return string(b)
 }
 
-func GenerateUniqueCode(repo database.Repository) (string, error) {
+func GenerateUniqueCode(repo database.Repository, maxAttempts int) (string, error) {
 
-	for {
+	if maxAttempts <= 0 {
+		maxAttempts = DefaultMaxAttempts
+	}
+
+	for attempts := 0; attempts < maxAttempts; attempts++ {
 		code := GenerateCode(6)
 
 		exists, err := repo.ShortCodeExist(code)
@@ -43,4 +51,6 @@ func GenerateUniqueCode(repo database.Repository) (string, error) {
 			return code, nil
 		}
 	}
+
+	return "", ErrMaxCodeGenerationAttempts
 }
