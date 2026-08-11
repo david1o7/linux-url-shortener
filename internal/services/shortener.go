@@ -32,7 +32,7 @@ func GenerateCode(lenght int) string {
 	return string(b)
 }
 
-func GenerateUniqueCode(repo database.Repository, maxAttempts int) (string, error) {
+func GenerateUniqueCode(repo database.Repository, url string, maxAttempts int) (string, error) {
 
 	if maxAttempts <= 0 {
 		maxAttempts = DefaultMaxAttempts
@@ -41,15 +41,16 @@ func GenerateUniqueCode(repo database.Repository, maxAttempts int) (string, erro
 	for attempts := 0; attempts < maxAttempts; attempts++ {
 		code := GenerateCode(6)
 
-		exists, err := repo.ShortCodeExist(code)
+		err := repo.SaveUrl(code, url)
 
 		if err != nil {
+			if errors.Is(err, database.ErrShortCodeExist) {
+				continue
+			}
+
 			return "", err
 		}
-
-		if !exists {
-			return code, nil
-		}
+		return code, nil
 	}
 
 	return "", ErrMaxCodeGenerationAttempts

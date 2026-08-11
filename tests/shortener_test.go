@@ -5,19 +5,16 @@ import (
 	"strings"
 	"testing"
 
+	"Linux-url-shortener/internal/database"
 	"Linux-url-shortener/internal/services"
 	"Linux-url-shortener/tests/mocks"
 )
 
 func TestGenerateCode(t *testing.T) {
-
 	code := services.GenerateCode(6)
 
 	if len(code) != 6 {
-		t.Fatalf(
-			"expected code length 6, got %d",
-			len(code),
-		)
+		t.Fatalf("expected code length 6, got %d", len(code))
 	}
 }
 
@@ -25,157 +22,65 @@ func TestGenerateCode_ZeroLength(t *testing.T) {
 	code := services.GenerateCode(0)
 
 	if code != "" {
-		t.Fatalf(
-			"expected empty code, got %q",
-			code,
-		)
+		t.Fatalf("expected empty code, got %q", code)
 	}
 }
 
 func TestGenerateCode_ValidCharacters(t *testing.T) {
-
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	code := services.GenerateCode(6)
+	code := services.GenerateCode(100)
 
 	for _, char := range code {
-
 		if !strings.ContainsRune(charset, char) {
-
-			t.Fatalf(
-				"generated invalid character %q",
-				char,
-			)
+			t.Fatalf("generated invalid character %q", char)
 		}
 	}
 }
 
-func TestGeneratedUniqueCode_AvailableCode(t *testing.T) {
-	repo := &mocks.MockRepository{
-		ShortCodeExistsValue: false,
-	}
+func TestGenerateUniqueCode_Success(t *testing.T) {
+	repo := &mocks.MockRepository{}
 
-	code, err := services.GenerateUniqueCode(repo, 10)
+	code, err := services.GenerateUniqueCode(
+		repo,
+		"https://google.com",
+		10,
+	)
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	if code == "" {
-		t.Fatal("expected a generated code")
+		t.Fatal("expected generated shortcode")
 	}
 
 	if len(code) != 6 {
 		t.Fatalf(
-			"expected code length 6, got %d",
+			"expected shortcode length 6, got %d",
 			len(code),
 		)
 	}
 
-	if !repo.ShortCodeExistsCalled {
-		t.Fatal(
-			"expected ShortCodeExist to be called",
-		)
+	if !repo.SaveURLCalled {
+		t.Fatal("expected SaveUrl to be called")
 	}
 }
 
-func TestGeneratedUniqueCode_RepositoryError(t *testing.T) {
+func TestGenerateUniqueCode_SaveError(t *testing.T) {
 	repo := &mocks.MockRepository{
-		ShortCodeExistsErr: mocks.ErrDatabase,
+		SaveURLErr: mocks.ErrDatabase,
 	}
 
-	code, err := services.GenerateUniqueCode(repo, 10)
-
-	if err == nil {
-		t.Fatalf("expected repository error")
-	}
-
-	if code != "" {
-		t.Fatalf("expected empty code, got %q", code)
-	}
-
-}
-
-func TestGenerateUniqueCode_Collision(t *testing.T) {
-
-	repo := &mocks.MockRepository{
-		ShortCodeExistsSequence: []bool{true, true, false},
-	}
-
-	code, err := services.GenerateUniqueCode(repo, 10)
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if code == "" {
-		t.Fatalf("expected a generated code")
-	}
-
-	if repo.ShortCodeExistsCalls != 3 {
-		t.Fatalf(
-			"expected 3 existence checks, got %d",
-			repo.ShortCodeExistsCalls,
-		)
-	}
-}
-
-func TestGenerateUniqueCode_ReturnsRepositoryError(t *testing.T) {
-	repo := &mocks.MockRepository{
-		ShortCodeExistsErr: mocks.ErrDatabase,
-	}
-
-	code, err := services.GenerateUniqueCode(repo, 10)
-
-	if err != mocks.ErrDatabase {
-		t.Fatalf(
-			"expected %v, got %v",
-			mocks.ErrDatabase,
-			err,
-		)
-	}
-
-	if code != "" {
-		t.Fatalf(
-			"expected empty code, got %q",
-			code,
-		)
-	}
-}
-
-func TestGenerateUniqueCode_ReturnsUniqueCode(t *testing.T) {
-	repo := &mocks.MockRepository{
-		ShortCodeExistsValue: false,
-	}
-
-	code, err := services.GenerateUniqueCode(repo, 10)
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if code == "" {
-		t.Fatal("expected generated code, got empty string")
-	}
-
-	if len(code) != 6 {
-		t.Fatalf(
-			"expected code length 6, got %d",
-			len(code),
-		)
-	}
-}
-
-func TestGenerateUniqueCode_RepositoryError(t *testing.T) {
-	repo := &mocks.MockRepository{
-		ShortCodeExistsErr: mocks.ErrDatabase,
-	}
-
-	code, err := services.GenerateUniqueCode(repo, 10)
+	code, err := services.GenerateUniqueCode(
+		repo,
+		"https://google.com",
+		10,
+	)
 
 	if !errors.Is(err, mocks.ErrDatabase) {
 		t.Fatalf(
-			"expected repository error %v, got %v",
+			"expected database error %v, got %v",
 			mocks.ErrDatabase,
 			err,
 		)
@@ -187,74 +92,148 @@ func TestGenerateUniqueCode_RepositoryError(t *testing.T) {
 			code,
 		)
 	}
-}
 
-func TestGenerateUniqueCode_InvalidMaxAttempts(t *testing.T) {
-	repo := &mocks.MockRepository{
-		ShortCodeExistsValue: false,
-	}
-
-	code, err := services.GenerateUniqueCode(repo, 0)
-
-	if err != nil {
-		t.Fatalf(
-			"expected default behavior, got %v",
-			err,
-		)
-	}
-
-	if code == "" {
-		t.Fatal("expected generated code")
-	}
-}
-
-func TestGenerateUniqueCode_MaxAttempts(t *testing.T) {
-	repo := &mocks.MockRepository{
-		ShortCodeExistsValue: true,
-	}
-
-	_, err := services.GenerateUniqueCode(repo, 3)
-
-	if !errors.Is(err, services.ErrMaxCodeGenerationAttempts) {
-		t.Fatalf(
-			"expected max attempts error, got %v",
-			err,
-		)
+	if !repo.SaveURLCalled {
+		t.Fatal("expected SaveUrl to be called")
 	}
 }
 
 func TestGenerateUniqueCode_CollisionThenSuccess(t *testing.T) {
 	attempts := 0
 
+	repo := &mocks.MockRepository{}
+
+	repo.SaveURLErr = nil
+
+	originalSave := repo.SaveUrl
+
+	_ = originalSave
+
+	repo.SaveURLSequence = []error{
+		database.ErrShortCodeExist,
+		nil,
+	}
+
+	code, err := services.GenerateUniqueCode(
+		repo,
+		"https://google.com",
+		10,
+	)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if code == "" {
+		t.Fatal("expected generated shortcode")
+	}
+
+	if repo.SaveURLCalls != 2 {
+		t.Fatalf(
+			"expected 2 SaveUrl attempts, got %d",
+			repo.SaveURLCalls,
+		)
+	}
+
+	attempts = repo.SaveURLCalls
+
+	if attempts != 2 {
+		t.Fatalf("expected 2 attempts, got %d", attempts)
+	}
+}
+
+func TestGenerateUniqueCode_MaxAttempts(t *testing.T) {
 	repo := &mocks.MockRepository{
-		ShortCodeExistFunc: func(code string) (bool, error) {
-			attempts++
-
-			if attempts < 3 {
-				return true, nil
-			}
-
-			return false, nil
+		SaveURLSequence: []error{
+			database.ErrShortCodeExist,
+			database.ErrShortCodeExist,
+			database.ErrShortCodeExist,
 		},
 	}
 
-	code, err := services.GenerateUniqueCode(repo, 3)
+	code, err := services.GenerateUniqueCode(
+		repo,
+		"https://google.com",
+		3,
+	)
+
+	if !errors.Is(
+		err,
+		services.ErrMaxCodeGenerationAttempts,
+	) {
+		t.Fatalf(
+			"expected max attempts error, got %v",
+			err,
+		)
+	}
+
+	if code != "" {
+		t.Fatalf(
+			"expected empty code, got %q",
+			code,
+		)
+	}
+
+	if repo.SaveURLCalls != 3 {
+		t.Fatalf(
+			"expected 3 SaveUrl attempts, got %d",
+			repo.SaveURLCalls,
+		)
+	}
+}
+
+func TestGenerateUniqueCode_DefaultMaxAttempts(t *testing.T) {
+	repo := &mocks.MockRepository{}
+
+	code, err := services.GenerateUniqueCode(
+		repo,
+		"https://google.com",
+		0,
+	)
 
 	if err != nil {
 		t.Fatalf(
-			"expected no error, got %v",
+			"expected default max attempts behavior, got %v",
 			err,
 		)
 	}
 
 	if code == "" {
-		t.Fatal("expected generated code")
+		t.Fatal("expected generated shortcode")
 	}
 
-	if attempts != 3 {
+	if repo.SaveURLCalls != 1 {
 		t.Fatalf(
-			"expected 3 attempts, got %d",
-			attempts,
+			"expected 1 SaveUrl attempt, got %d",
+			repo.SaveURLCalls,
+		)
+	}
+}
+
+func TestGenerateUniqueCode_NegativeMaxAttempts(t *testing.T) {
+	repo := &mocks.MockRepository{}
+
+	code, err := services.GenerateUniqueCode(
+		repo,
+		"https://google.com",
+		-5,
+	)
+
+	if err != nil {
+		t.Fatalf(
+			"expected default max attempts behavior, got %v",
+			err,
+		)
+	}
+
+	if code == "" {
+		t.Fatal("expected generated shortcode")
+	}
+
+	if repo.SaveURLCalls != 1 {
+		t.Fatalf(
+			"expected 1 SaveUrl attempt, got %d",
+			repo.SaveURLCalls,
 		)
 	}
 }

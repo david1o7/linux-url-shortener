@@ -23,6 +23,9 @@ import (
 )
 
 func main() {
+	// IMPORTANT : When migrating the database teir add an index to the shortcode column and sue
+	//  the UNiQUE keyword in the SQL code when initialising the column
+
 	metrics.Init()
 
 	err := godotenv.Load()

@@ -57,7 +57,7 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 			return
 		}
 
-		code, err := services.GenerateUniqueCode(repo, 10)
+		code, err := services.GenerateUniqueCode(repo, req.URL, 10)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return

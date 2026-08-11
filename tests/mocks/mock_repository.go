@@ -19,17 +19,40 @@ type MockRepository struct {
 	ShortCodeExistsErr error
 	GetByOriginalErr   error
 
-	URL                     string
-	ExistingURL             *models.Url
-	ShortCodeExistsValue    bool
+	SaveURLErr      error
+	SaveURLCalled   bool
+	SaveURLCalls    int
+	SaveURLSequence []error
+
+	URL                  string
+	ExistingURL          *models.Url
+	ShortCodeExistsValue bool
+
 	ShortCodeExistsSequence []bool
 	ShortCodeExistsCalls    int
 	ShortCodeExistFunc      func(string) (bool, error)
 }
 
-func (m *MockRepository) SaveUrl(shortCode, originalURL string) error {
+func (m *MockRepository) SaveUrl(shortCode string, originalURL string) error {
+
 	m.SaveCalled = true
-	return m.SaveErr
+	m.SaveURLCalled = true
+
+	m.SaveURLCalls++
+
+	if m.SaveURLCalls <= len(m.SaveURLSequence) {
+		return m.SaveURLSequence[m.SaveURLCalls-1]
+	}
+
+	if m.SaveErr != nil {
+		return m.SaveErr
+	}
+
+	if m.SaveURLErr != nil {
+		return m.SaveURLErr
+	}
+
+	return nil
 }
 
 func (m *MockRepository) GetUrl(shortCode string) (string, error) {

@@ -1,6 +1,9 @@
 package database
 
-import "Linux-url-shortener/internal/models"
+import (
+	"Linux-url-shortener/internal/models"
+	"errors"
+)
 
 type Repository interface {
 	SaveUrl(shortCode string, originalURL string) error
@@ -13,3 +16,5 @@ type Repository interface {
 
 	ShortCodeExist(shortCode string) (bool, error)
 }
+
+var ErrShortCodeExist = errors.New("Short code already exists!")

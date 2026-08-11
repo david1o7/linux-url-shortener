@@ -4,6 +4,9 @@ import (
 	"Linux-url-shortener/internal/logger"
 	"Linux-url-shortener/internal/models"
 	"database/sql"
+	"errors"
+
+	"github.com/jackc/pgx/v5/pgconn"
 
 	_ "github.com/lib/pq"
 )
@@ -30,11 +33,18 @@ func (p *PostgresRepository) SaveUrl(shortCode string, OriginalCode string) erro
 	_, err := p.DB.Exec(query, OriginalCode, shortCode)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return ErrShortCodeExist
+		}
+
 		logger.Log.Error(
 			"Database query Error",
 			"Error", err,
 		)
 	}
+
 	return err
 }
 
