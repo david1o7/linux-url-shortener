@@ -84,7 +84,7 @@ func (v *URLValidator) Validate(rawURL string) bool {
 	}
 
 	defer func() {
-		if err := resp.Body.Close(); err != nil{
+		if err := resp.Body.Close(); err != nil {
 			logger.Log.Error(
 				"Failed to close response",
 				"Error", err,
