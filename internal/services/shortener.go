@@ -9,7 +9,7 @@ import (
 )
 
 var ErrMaxCodeGenerationAttempts = errors.New(
-	"Maximum shortcode generation attempts exceeded",
+	"maximum shortcode generation attempts exceeded",
 )
 
 const DefaultMaxAttempts = 10

@@ -25,6 +25,7 @@ import (
 func main() {
 	// IMPORTANT : When migrating the database teir add an index to the shortcode column and sue
 	//  the UNiQUE keyword in the SQL code when initialising the column
+	//   Make sure your reverse proxy is configured to set these X-Forwarded-For and X-Real-IP for user ips
 
 	metrics.Init()
 

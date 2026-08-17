@@ -17,4 +17,4 @@ type Repository interface {
 	ShortCodeExist(shortCode string) (bool, error)
 }
 
-var ErrShortCodeExist = errors.New("Short code already exists!")
+var ErrShortCodeExist = errors.New("short code already exists")

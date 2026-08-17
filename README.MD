@@ -6,6 +6,41 @@ Rather than building another CRUD project, I used this project to learn how prod
 
 ---
 
+# Version History
+
+## v1.0
+
+Production-ready backend featuring:
+
+- PostgreSQL
+- Redis
+- Prometheus
+- Grafana
+- Graceful Shutdown
+- URL Validation
+- SSRF Protection
+- Structured Logging
+- Docker
+- Unit & Integration Tests
+
+---
+
+## v2 Branch (In Progress)
+
+Development continues on the **v2** branch.
+
+Current improvements include:
+
+- GitHub Actions CI
+- Automatic formatting (`gofmt`)
+- Static analysis (`go vet`)
+- Repository abstraction
+- Handler unit tests
+- Improved project architecture
+- Increased test coverage
+
+---
+
 ## Features
 
 ### Core
@@ -72,41 +107,6 @@ Rather than building another CRUD project, I used this project to learn how prod
 
 ---
 
-# Version History
-
-## v1.0
-
-Production-ready backend featuring:
-
-- PostgreSQL
-- Redis
-- Prometheus
-- Grafana
-- Graceful Shutdown
-- URL Validation
-- SSRF Protection
-- Structured Logging
-- Docker
-- Unit & Integration Tests
-
----
-
-## v2 Branch (In Progress)
-
-Development continues on the **v2** branch.
-
-Current improvements include:
-
-- GitHub Actions CI
-- Automatic formatting (`gofmt`)
-- Static analysis (`go vet`)
-- Repository abstraction
-- Handler unit tests
-- Improved project architecture
-- Increased test coverage
-
----
-
 # Trade-offs
 
 Current architectural trade-offs:
@@ -115,7 +115,6 @@ Current architectural trade-offs:
 - No database replication
 - No load balancer
 - Redis is memory-bound
-- Fixed-window rate limiter
 
 ---
 

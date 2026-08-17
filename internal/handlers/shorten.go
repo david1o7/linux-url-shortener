@@ -75,7 +75,10 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 		}
 		w.Header().Set("Content-Type", "application/json")
 
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil{
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		logger.Log.Info(
 			"Short URL Created",
@@ -134,7 +137,13 @@ func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.Handler
 			return
 		}
 
-		cache.Set(code, original)
+		if err = cache.Set(code, original); err != nil{
+			logger.Log.Error(
+				"Cache update Error",
+				"Err", err,
+			)
+			return
+		}
 
 		logger.Log.Info(
 			"Redirecting...",

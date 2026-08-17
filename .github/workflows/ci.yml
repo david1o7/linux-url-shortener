@@ -5,18 +5,17 @@ on:
     branches:
       - main
       - v2
-
   pull_request:
     branches:
       - main
-      
+      - v2
+
 jobs:
   test:
-
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -24,13 +23,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache: true
 
       - name: Download Dependencies
         run: go mod download
 
       - name: Verify Formatting
         run: |
-          test -z "$(gofmt -l .)"
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "The following files are not gofmt'd:"
+            gofmt -l .
+            exit 1
+          fi
 
       - name: Run Go Vet
         run: go vet ./...
@@ -45,3 +49,23 @@ jobs:
 
       - name: Show Coverage
         run: go tool cover -func=coverage.out
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: latest
+          args: --timeout=5m
