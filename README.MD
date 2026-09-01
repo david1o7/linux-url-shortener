@@ -1,4 +1,3 @@
-```markdown
 # Linux URL Shortener
 
 A production-inspired URL shortener written in **Go**.
@@ -7,21 +6,20 @@ This is not a CRUD demo. It is a deliberate practice project for how backend ser
 
 **Stack:** Go · PostgreSQL · Redis · nginx · Prometheus · Grafana · Docker · GitHub Actions
 
----
+
 ## V1 DESIGN
 [v1 system design](images/System-Design1.png)
 
 ## What it does
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/shorten` | Create a short link |
-| `GET` | `/{code}` | Redirect to the original URL |
-| `GET` | `/health/live` | Process liveness |
-| `GET` | `/health/ready` | Readiness (Postgres + Redis) |
-| `GET` | `/metrics` | Prometheus metrics |
 
----
+
+ `POST`  `/shorten` 
+ `GET`  `/{code}`  Redirect to the original URL 
+ `GET`  `/health/live`  Process liveness 
+ `GET`  `/health/ready` Readiness (Postgres + Redis) 
+ `GET`  `/metrics`  Prometheus metrics 
+
 
 ## Features
 
@@ -70,8 +68,6 @@ Client
 
 Redis is an optimization. Cache miss falls back to the database. Uniqueness is never decided by the cache alone.
 
----
-
 ## Design decision: DB as source of truth (STAR)
 
 **Situation**  
@@ -92,13 +88,16 @@ No TOCTOU gap between check and write. Collisions are handled, not hoped away. R
 
 ## Hard lessons
 
-| Struggle | Resolution |
-|----------|------------|
-| Fixed-window rate limits felt blunt under bursts | Token bucket with atomic consume in Redis |
-| Everyone shared one rate-limit bucket behind a proxy | nginx forwards `X-Real-IP` / `X-Forwarded-For`; limiter reads client IP |
-| Integration tests slow and flaky | Shared `TestMain` containers; `TRUNCATE` + Redis flush between tests |
-| Async click increment vs test teardown | Cleanup wait so the DB is not closed mid-goroutine |
-| Config defaults hiding missing secrets | Required env vars validated at startup |
+| Fixed-window rate limits felt blunt under bursts 
+| Token bucket with atomic consume in Redis |
+| Everyone shared one rate-limit bucket behind a proxy 
+| nginx forwards `X-Real-IP` / `X-Forwarded-For`; limiter reads client IP |
+| Integration tests slow and flaky 
+| Shared `TestMain` containers; `TRUNCATE` + Redis flush between tests |
+| Async click increment vs test teardown 
+| Cleanup wait so the DB is not closed mid-goroutine |
+| Config defaults hiding missing secrets 
+| Required env vars validated at startup |
 
 ---
 
@@ -264,4 +263,3 @@ To practice production-shaped backend engineering: boundaries (cache vs truth), 
 ## License
 
 MIT (or your choice)
-```
