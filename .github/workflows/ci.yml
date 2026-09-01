@@ -111,6 +111,6 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.64.8
+          version: latest
           args: --timeout=5m
           # Install only; cache is handled by the action
