@@ -3,36 +3,55 @@ package services
 import (
 	"Linux-url-shortener/internal/database"
 	"crypto/rand"
-	"database/sql"
+	"errors"
+
 	"math/big"
 )
 
+var ErrMaxCodeGenerationAttempts = errors.New(
+	"maximum shortcode generation attempts exceeded",
+)
+
+const DefaultMaxAttempts = 10
 
 func GenerateCode(lenght int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	b := make([]byte, 6)
+	b := make([]byte, lenght)
 
 	for i := range b {
-		num , _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+
+		if err != nil {
+			panic(err)
+		}
+
 		b[i] = charset[num.Int64()]
 	}
 
 	return string(b)
 }
 
-func GenerateUniqueCode(db *sql.DB) (string, error){
-	for {
+func GenerateUniqueCode(repo database.Repository, url string, maxAttempts int) (string, error) {
+
+	if maxAttempts <= 0 {
+		maxAttempts = DefaultMaxAttempts
+	}
+
+	for attempts := 0; attempts < maxAttempts; attempts++ {
 		code := GenerateCode(6)
 
-		exists, err := database.ShortCodeExist(db, code)
+		err := repo.SaveUrl(code, url)
 
-		if err != nil{
+		if err != nil {
+			if errors.Is(err, database.ErrShortCodeExist) {
+				continue
+			}
+
 			return "", err
 		}
-
-		if !exists {
-			return code, nil
-		}
+		return code, nil
 	}
+
+	return "", ErrMaxCodeGenerationAttempts
 }

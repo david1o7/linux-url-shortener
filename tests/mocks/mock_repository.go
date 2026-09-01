@@ -1,0 +1,107 @@
+package mocks
+
+import (
+	"errors"
+
+	"Linux-url-shortener/internal/models"
+)
+
+type MockRepository struct {
+	SaveCalled            bool
+	GetCalled             bool
+	IncrementCalled       bool
+	ShortCodeExistsCalled bool
+	GetByOriginalCalled   bool
+
+	SaveErr            error
+	GetErr             error
+	IncrementErr       error
+	ShortCodeExistsErr error
+	GetByOriginalErr   error
+
+	SaveURLErr      error
+	SaveURLCalled   bool
+	SaveURLCalls    int
+	SaveURLSequence []error
+
+	URL                  string
+	ExistingURL          *models.Url
+	ShortCodeExistsValue bool
+
+	ShortCodeExistsSequence []bool
+	ShortCodeExistsCalls    int
+	ShortCodeExistFunc      func(string) (bool, error)
+}
+
+func (m *MockRepository) SaveUrl(shortCode string, originalURL string) error {
+
+	m.SaveCalled = true
+	m.SaveURLCalled = true
+
+	m.SaveURLCalls++
+
+	if m.SaveURLCalls <= len(m.SaveURLSequence) {
+		return m.SaveURLSequence[m.SaveURLCalls-1]
+	}
+
+	if m.SaveErr != nil {
+		return m.SaveErr
+	}
+
+	if m.SaveURLErr != nil {
+		return m.SaveURLErr
+	}
+
+	return nil
+}
+
+func (m *MockRepository) GetUrl(shortCode string) (string, error) {
+	m.GetCalled = true
+
+	if m.GetErr != nil {
+		return "", m.GetErr
+	}
+
+	return m.URL, nil
+}
+
+func (m *MockRepository) IncrementClicks(shortCode string) error {
+	m.IncrementCalled = true
+	return m.IncrementErr
+}
+
+func (m *MockRepository) GetByOriginal(original string) (*models.Url, error) {
+	m.GetByOriginalCalled = true
+
+	if m.GetByOriginalErr != nil {
+		return nil, m.GetByOriginalErr
+	}
+
+	return m.ExistingURL, nil
+}
+
+func (m *MockRepository) ShortCodeExist(code string) (bool, error) {
+	m.ShortCodeExistsCalled = true
+
+	if m.ShortCodeExistFunc != nil {
+		return m.ShortCodeExistFunc(code)
+	}
+
+	if m.ShortCodeExistsErr != nil {
+		return false, m.ShortCodeExistsErr
+	}
+
+	if m.ShortCodeExistsCalls < len(m.ShortCodeExistsSequence) {
+		result := m.ShortCodeExistsSequence[m.ShortCodeExistsCalls]
+
+		m.ShortCodeExistsCalls++
+
+		return result, nil
+	}
+
+	m.ShortCodeExistsCalls++
+
+	return m.ShortCodeExistsValue, m.ShortCodeExistsErr
+}
+
+var ErrDatabase = errors.New("database error")

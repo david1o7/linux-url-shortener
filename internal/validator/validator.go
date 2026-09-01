@@ -13,27 +13,27 @@ type HTTPClient interface {
 }
 
 type URLValidator struct {
-	client HTTPClient
+	client   HTTPClient
 	resolver DNSResolver
-	timeout time.Duration
+	timeout  time.Duration
 }
 
 func NewURLValidator(client HTTPClient, resolver DNSResolver, timeout int) *URLValidator {
-    if client == nil {
-        client = &http.Client{
-            Timeout: time.Duration(timeout) * time.Second,
-        }
-    }
+	if client == nil {
+		client = &http.Client{
+			Timeout: time.Duration(timeout) * time.Second,
+		}
+	}
 
-    if resolver == nil {
-        resolver = &RealResolver{}
-    }
+	if resolver == nil {
+		resolver = &RealResolver{}
+	}
 
-    return &URLValidator{
-        client:   client,
-        resolver: resolver,
-        timeout:  time.Duration(timeout) * time.Second,
-    }
+	return &URLValidator{
+		client:   client,
+		resolver: resolver,
+		timeout:  time.Duration(timeout) * time.Second,
+	}
 }
 
 func (v *URLValidator) Validate(rawURL string) bool {
@@ -83,7 +83,14 @@ func (v *URLValidator) Validate(rawURL string) bool {
 		return false
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Log.Error(
+				"Failed to close response",
+				"Error", err,
+			)
+		}
+	}()
 
 	return resp.StatusCode >= 200 && resp.StatusCode < 400
 }

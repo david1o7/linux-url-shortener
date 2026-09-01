@@ -193,8 +193,7 @@ cd Linux-url-shortener
 
 Install dependencies:
 
-```bash
-go mod download
+docker compose up --build
 ```
 
 Configure environment variables:
@@ -206,6 +205,7 @@ cp .env.example .env
 Run locally:
 
 ```bash
+go mod download
 go run ./cmd
 ```
 
@@ -217,12 +217,14 @@ docker compose up --build
 
 ---
 
-# API
+## API examples
 
 ### Create Short URL
 
-```http
-POST /shorten
+```bash
+curl -s -X POST http://localhost/shorten \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://example.com"}'
 ```
 
 ```json
@@ -233,20 +235,29 @@ POST /shorten
 
 ### Redirect
 
-```http
-GET /{shortcode}
+```bash
+curl -s http://localhost/health/ready
 ```
 
 ### Health
 
-```http
-GET /health
-```
+| Variable | Role |
+|----------|------|
+| `DB_PASSWORD` | Required — no silent empty secret |
+| `BASE_URL` | Public URL embedded in short links (nginx / VPS IP / domain) |
+| `RATE_LIMIT_*` | Token-bucket capacity, refill, TTL |
+| `APP_ENV` | `production` → JSON logs |
+
+Invalid or missing required config fails **at startup**, not on the first request.
 
 ### Metrics
 
-```http
-GET /metrics
+```bash
+# Unit (default)
+go test ./... -race -count=1
+
+# Integration (Docker required)
+go test -tags=integration ./tests/integration/ -v -count=1 -timeout 15m
 ```
 
 ---
