@@ -1,0 +1,67 @@
+groups:
+  - name: url_shortener
+    rules:
+      - alert: InstanceDown
+        expr: up{job="url-shortener"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "URL shortener instance down"
+          description: "Prometheus cannot scrape {{ $labels.instance }} for more than 1 minute."
+
+      - alert: HighRequestLatency
+        expr: |
+          histogram_quantile(0.99, sum by (le) (rate(http_requests_duration_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p99 request latency"
+          description: "p99 latency is above 1s for 5 minutes."
+
+      - alert: HighRateLimiting
+        expr: rate(rate_limited_request_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elevated rate limiting"
+          description: "More than 1 rate-limited request per second over 5 minutes."
+
+      - alert: HighInvalidURLRate
+        expr: rate(Invalid_urls_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High invalid URL rate"
+          description: "Invalid URL submissions exceed 0.5/s for 5 minutes."
+
+      - alert: LowCacheHitRatio
+        expr: |
+          (
+            rate(cache_hits_total[10m])
+            /
+            clamp_min(rate(cache_hits_total[10m]) + rate(cache_misses_total[10m]), 1e-9)
+          ) < 0.3
+          and
+          (rate(cache_hits_total[10m]) + rate(cache_misses_total[10m])) > 0.1
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "Cache hit ratio below 30%"
+          description: "Redirect cache hit ratio has been under 30% for 15 minutes (with meaningful traffic)."
+
+      - alert: NoURLsShortened
+        expr: |
+          rate(http_requests_total{path="/shorten"}[15m]) > 0.05
+          and
+          rate(urls_shortened_total[15m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Shorten traffic but zero successes"
+          description: "Requests hit /shorten but urls_shortened_total is flat — check DB, validator, or errors."

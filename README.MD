@@ -1,259 +1,175 @@
 # Linux URL Shortener
 
-A production-inspired URL shortener built in **Go** with a focus on reliability, observability, and backend engineering best practices.
-
-Rather than building another CRUD project, I used this project to learn how production backend services are designed, tested, monitored, and deployed.
+A production-inspired URL shortener in **Go**. Built to practice real backend work: reliability, security, observability, and deployability — not just CRUD.
 
 ---
 
-# Version History
+## Demo
+![V1 system_design](images/System-Design1.png)
 
-## v1.0
+## What it does
 
-Production-ready backend featuring:
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /shorten` | Create a short link |
+| `GET /{code}` | Redirect to the original URL |
+| `GET /health/live` | Liveness probe |
+| `GET /health/ready` | Readiness (DB + Redis) |
+| `GET /metrics` | Prometheus metrics |
 
-- PostgreSQL
-- Redis
-- Prometheus
-- Grafana
-- Graceful Shutdown
-- URL Validation
-- SSRF Protection
-- Structured Logging
-- Docker
-- Unit & Integration Tests
-
----
-
-## v2 Branch (In Progress)
-
-Development continues on the **v2** branch.
-
-Current improvements include:
-
-- GitHub Actions CI
-- Automatic formatting (`gofmt`)
-- Static analysis (`go vet`)
-- Repository abstraction
-- Handler unit tests
-- Improved project architecture
-- Increased test coverage
+**Stack:** Go · PostgreSQL · Redis · nginx · Prometheus · Grafana · Docker
 
 ---
 
 ## Features
 
-### Core
-- Shorten long URLs
-- Redirect shortened URLs
-- PostgreSQL persistence
-- Redis caching
-- Indexed database lookups
-
-### Security
-- URL validation
-- SSRF protection
-- DNS resolution
-- HTTP client abstraction
-- Rate limiting
-
-### Observability
-- Prometheus metrics
-- Grafana dashboards
-- Structured logging
-- Health check endpoint
-- Request latency metrics
-
-### Reliability
-- Graceful shutdown
-- Environment-based configuration
-- Unit tests
-- Integration tests
-- Docker support
+- **PostgreSQL** as durable source of truth (unique short codes)
+- **Redis** redirect cache + token-bucket rate limiting
+- **URL validation** + SSRF protection (private / loopback / link-local rejected)
+- **Request / correlation IDs** on every request
+- **Structured logging** (text in dev, JSON in production)
+- **Graceful shutdown**, connection pooling, versioned migrations
+- **nginx** reverse proxy (ready for multi-instance load balancing)
+- **CI:** `gofmt`, `go vet`, race tests, golangci-lint
+- Unit tests + integration tests (Postgres/Redis via Testcontainers)
 
 ---
 
-## Tech Stack
+## Architecture (short)
 
-- Go
-- PostgreSQL
-- Redis
-- Docker
-- Prometheus
-- Grafana
-- GitHub Actions (v2)
+```text
+Client → nginx → Go app → PostgreSQL (truth)
+                      ↘ Redis (cache + rate limit)
+```
 
----
-
-## Architecture
-
-![System Architecture](images/System-Design1.png)
+Redis is an optimization. If the cache is cold or empty, the app still serves redirects from the database.
 
 ---
 
-## Monitoring
+## Design story: DB as source of truth (STAR)
 
-### Grafana Dashboard
+**Situation:** Checking “does this short code already exist?” only in the app (or only in Redis) races under concurrency — two requests can generate the same code and both “pass.”
 
-![Grafana Dashboard](images/Grafana.jpg)
+**Task:** Make uniqueness correct under concurrent load without a distributed lock.
 
----
+**Action:** Rely on a **UNIQUE** constraint on `shortcode` in PostgreSQL. Insert first; on unique violation (`23505`), map to a domain error and retry with a new code. The database decides conflicts; the app reacts.
 
-## Demo
-
-![Application](images/image.png)
-
-![Demo](images/Code_XoEEY9mPtk.gif)
+**Result:** No TOCTOU gap between “check” and “insert.” Cache stays optional. Collisions are handled, not hoped away.
 
 ---
 
-# Trade-offs
+## Other hard lessons
 
-Current architectural trade-offs:
-
-- Single Go server
-- No database replication
-- No load balancer
-- Redis is memory-bound
-
----
-
-# Edge Cases Handled
-
-- Cache hits & misses
-- Duplicate short codes
-- Invalid URLs
-- Private IPs
-- Loopback addresses
-- Unsupported protocols
-- SSRF attacks
-- Dependency health checks
+| Struggle | What we did |
+|----------|-------------|
+| Fixed-window rate limit felt crude under bursts | Token bucket in Redis (atomic Lua-style consume) |
+| `lib/pq` errors vs `pgx` error types | Map `*pq.Error` / `23505` to `ErrShortCodeExist` for the driver we actually use |
+| Integration tests slow / flaky containers | Shared `TestMain` containers + `TRUNCATE` / Redis flush between tests |
+| Async `IncrementClicks` vs test teardown | Short cleanup wait so the DB isn’t closed mid-goroutine |
+| Everyone shared one rate-limit bucket behind a proxy | nginx sets `X-Forwarded-For` / `X-Real-IP`; limiter reads real client IP |
 
 ---
 
-# Biggest Challenges
+## Version path
 
-A few things that pushed me while building this project:
-
-- Learning Docker from scratch
-- Debugging middleware execution order
-- Integrating Prometheus metrics
-- Mocking DNS lookups for testing
-- Building secure URL validation
-- Understanding graceful shutdown
-
-One memorable bug came from my DNS validation tests. After spending hours debugging, I discovered the validator wasn't broken—my internet connection was causing the requests to time out. Increasing the timeout fixed the issue and reminded me that sometimes the environment, not the code, is the problem.
+| Branch / stage | Focus |
+|----------------|--------|
+| **v1** | Postgres, Redis, metrics, validation, Docker |
+| **v2** | Config validation, pooling, migrations, token bucket, CI, request IDs, tests, nginx-ready deploy |
 
 ---
 
-# What I Learned
-
-This project helped me gain hands-on experience with:
-
-- Dependency Injection
-- Interfaces
-- Repository Pattern
-- Redis Caching
-- SQL Indexing
-- Prometheus & Grafana
-- Docker
-- HTTP Middleware
-- Contexts
-- Graceful Shutdown
-- Unit Testing
-- Integration Testing
-- Production Logging
-- Backend Security
-
----
-
-# Roadmap
-
-Planned improvements:
-
-- Custom aliases
-- URL expiration
-- Click analytics
-- JWT authentication
-- Admin dashboard
-- Distributed rate limiting
-- Kubernetes deployment
-
----
-
-# Running
-
-Clone the repository:
+## Run locally
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/Linux-url-shortener.git
 cd Linux-url-shortener
-```
+cp .env.example .env   # set DB_PASSWORD at minimum
 
-Install dependencies:
-
-```bash
-go mod download
-```
-
-Configure environment variables:
-
-```bash
-cp .env.example .env
-```
-
-Run locally:
-
-```bash
-go run ./cmd
-```
-
-Or with Docker:
-
-```bash
 docker compose up --build
 ```
 
----
+- App (via nginx): `http://localhost`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
 
-# API
+Without Docker:
 
-### Create Short URL
-
-```http
-POST /shorten
+```bash
+go mod download
+go run ./cmd
 ```
 
-```json
-{
-  "url":"https://google.com"
-}
-```
-
-### Redirect
-
-```http
-GET /{shortcode}
-```
-
-### Health
-
-```http
-GET /health
-```
-
-### Metrics
-
-```http
-GET /metrics
-```
+Requires local Postgres + Redis and a valid `.env`.
 
 ---
 
-# Final Thoughts
+## API examples
 
-This project started as a simple URL shortener but evolved into a platform for learning production backend engineering.
+**Shorten**
 
-It introduced me to caching, observability, testing, graceful shutdown, security, and infrastructure—skills that go far beyond building CRUD applications.
+```bash
+curl -s -X POST http://localhost/shorten \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"https://example.com"}'
+```
 
-I'm continuing to improve it as I learn more about distributed systems, cloud engineering, and system design.
+**Redirect**
+
+```bash
+curl -sI http://localhost/{shortcode}
+```
+
+**Health**
+
+```bash
+curl -s http://localhost/health/ready
+```
+
+---
+
+## Config that matters
+
+| Variable | Role |
+|----------|------|
+| `DB_PASSWORD` | Required — no silent empty secret |
+| `BASE_URL` | Public URL embedded in short links (nginx / VPS IP / domain) |
+| `RATE_LIMIT_*` | Token-bucket capacity, refill, TTL |
+| `APP_ENV` | `production` → JSON logs |
+
+Invalid or missing required config fails **at startup**, not on the first request.
+
+---
+
+## Tests
+
+```bash
+# Unit (default)
+go test ./... -race -count=1
+
+# Integration (Docker required)
+go test -tags=integration ./tests/integration/ -v -count=1 -timeout 15m
+```
+
+---
+
+## Deploy sketch (VPS + nginx)
+
+1. VPS with Docker  
+2. `BASE_URL=http://YOUR_VPS_IP` (or HTTPS hostname later)  
+3. Publish **only** port 80 (and 443 later); keep Postgres/Redis internal  
+4. Optional free hostname + Let’s Encrypt for a browser-trusted URL  
+
+Frontend (React + Tailwind on Vercel) can call the API; **redirects stay on the API host**.
+
+---
+
+## Roadmap
+
+Custom aliases · URL expiry · click analytics · auth · Alertmanager notifications · hardened `/metrics`
+
+---
+
+## What this project was for
+
+Learning production-shaped backend work: interfaces, repositories, middleware, caching boundaries, security checks, observability, CI, and shipping behind a reverse proxy — with mistakes fixed in public (driver error types, racey uniqueness, flaky tests) instead of hidden behind a tutorial happy path.

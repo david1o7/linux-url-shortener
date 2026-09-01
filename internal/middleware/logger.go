@@ -27,13 +27,18 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, r)
 
-		logger.Log.Info(
-			"HTTP Request",
+		attrs := []any{
 			"method", r.Method,
 			"path", r.URL.Path,
 			"status", rw.status,
 			"duration", time.Since(start),
 			"remote_addr", r.RemoteAddr,
-		)
+		}
+		if id := RequestIDFromContext(r.Context()); id != "" {
+			attrs = append(attrs, "request_id", id)
+		}
+
+		logger.Log.Info("HTTP Request", attrs...)
+
 	})
 }

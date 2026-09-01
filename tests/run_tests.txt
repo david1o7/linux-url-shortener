@@ -1,1 +1,10 @@
-go test ./... -coverpkg=./... -coverprofile=coverage.out, for full test running and coverage
+go test ./... -count=1 -timeout 5m -coverpkg=./... -coverprofile=coverage.out, for full test running and coverage
+
+# unit only (default CI)
+go test ./... -count=1
+
+# integration (Docker required)
+go test -tags=integration ./tests/integration/ -v -count=1 -timeout 5m
+
+#coverage percentages
+go tool cover -func=coverage.out

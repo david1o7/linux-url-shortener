@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"Linux-url-shortener/internal/cache"
+	"Linux-url-shortener/internal/config"
 	"Linux-url-shortener/internal/database"
 	"Linux-url-shortener/internal/logger"
 	metrics "Linux-url-shortener/internal/metric"
@@ -9,12 +10,9 @@ import (
 
 	"Linux-url-shortener/internal/services"
 	"encoding/json"
-	"os"
 
 	"net/http"
 	"strings"
-
-	"github.com/joho/godotenv"
 )
 
 type Request struct {
@@ -25,26 +23,14 @@ type Response struct {
 	ShortCode string `json:"short_code"`
 }
 
-func Shorten(repo database.Repository, validator *validator.URLValidator) http.HandlerFunc {
+func Shorten(repo database.Repository, validator *validator.URLValidator, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var req Request
 
-		err := godotenv.Load()
+		BaseUrl := cfg.BaseURL
 
-		if err != nil {
-			logger.Log.Error(
-				".env file error",
-				"Error", err,
-			)
-			http.Error(w, "Env file not found", http.StatusInternalServerError)
-
-			return
-		}
-
-		BaseUrl := os.Getenv("BASE_URL")
-
-		err = json.NewDecoder(r.Body).Decode(&req)
+		err := json.NewDecoder(r.Body).Decode(&req)
 
 		if err != nil {
 			http.Error(w, "Invalid content", http.StatusBadRequest)
@@ -62,16 +48,11 @@ func Shorten(repo database.Repository, validator *validator.URLValidator) http.H
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		err = repo.SaveUrl(code, req.URL)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 
 		metrics.UrlsShortened.Inc()
 
 		resp := Response{
-			ShortCode: BaseUrl + code,
+			ShortCode: BaseUrl + "/" + code,
 		}
 		w.Header().Set("Content-Type", "application/json")
 

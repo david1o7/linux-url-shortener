@@ -10,6 +10,13 @@ on:
       - main
       - v2
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test
@@ -44,11 +51,48 @@ jobs:
           go test ./... \
             -v \
             -race \
+            -count=1 \
+            -timeout=10m \
             -coverpkg=./... \
             -coverprofile=coverage.out
 
       - name: Show Coverage
+        if: always()
         run: go tool cover -func=coverage.out
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-out
+          path: coverage.out
+          if-no-files-found: ignore
+
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache: true
+
+      - name: Download Dependencies
+        run: go mod download
+
+      - name: Run Integration Tests
+        run: |
+          go test -tags=integration ./tests/integration/ \
+            -v \
+            -count=1 \
+            -timeout=10m
 
   lint:
     name: Lint
@@ -67,5 +111,6 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v1.64.8
           args: --timeout=5m
+          # Install only; cache is handled by the action

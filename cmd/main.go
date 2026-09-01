@@ -1,16 +1,15 @@
 package main
 
 import (
-	// "fmt"
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
 	"Linux-url-shortener/internal/cache"
+	"Linux-url-shortener/internal/config"
 	"Linux-url-shortener/internal/database"
 	"Linux-url-shortener/internal/handlers"
 	"Linux-url-shortener/internal/logger"
@@ -18,148 +17,135 @@ import (
 	"Linux-url-shortener/internal/middleware"
 	"Linux-url-shortener/internal/validator"
 
-	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-	// IMPORTANT : When migrating the database teir add an index to the shortcode column and sue
-	//  the UNiQUE keyword in the SQL code when initialising the column
-	//   Make sure your reverse proxy is configured to set these X-Forwarded-For and X-Real-IP for user ips
+	// 1. Load & validate configuration
+	cfg, err := config.Load()
+	if err != nil {
+		if n, err := os.Stderr.WriteString("config error: " + err.Error() + "\n"); err != nil {
+			logger.Log.Error(
+				"Error while listening for config errors",
+				"Issues", n,
+				"Error", err,
+			)
+		}
+		os.Exit(1)
+	}
+
+	// 2. Structured logging (JSON in production)
+	logger.Init(cfg.Env)
+	logger.Log.Info("Starting URL shortener", "env", cfg.Env, "port", cfg.Port)
 
 	metrics.Init()
 
-	err := godotenv.Load()
-
+	// 3. Database
+	db, err := database.Connect(cfg)
 	if err != nil {
-		logger.Log.Error(
-			".Env file Error",
-			"Error", err,
-		)
+		logger.Log.Error("Database connection failed", "error", err)
+		os.Exit(1)
 	}
 
-	host := os.Getenv("DB_HOST")
-	port := os.Getenv("DB_PORT")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	db_name := os.Getenv("DB_NAME")
-	db_sslmode := os.Getenv("DB_SSLMODE")
-	validatorTimeout, err := strconv.Atoi(os.Getenv("VALIDATOR_TIMEOUT"))
-	if err != nil {
-		validatorTimeout = 10
+	// Wait briefly for Postgres in container environments
+	if err := database.WaitForDB(db, 30*time.Second); err != nil {
+		logger.Log.Error("Database not ready", "error", err)
+		os.Exit(1)
 	}
+	logger.Log.Info("Database connection successful")
 
-	shutdownTimeout, err := strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT"))
-	if err != nil {
-		shutdownTimeout = 5
+	// 4. Run migrations
+	migrationsDir := os.Getenv("MIGRATIONS_DIR")
+	if migrationsDir == "" {
+		migrationsDir = "migrations"
 	}
-	ServerPort := os.Getenv("PORT")
-
-	db, err := database.Connect(host, port, user, password, db_name, db_sslmode)
-	if err != nil {
-		panic(err)
+	if err := database.Migrate(db, migrationsDir); err != nil {
+		logger.Log.Error("Migration failed", "error", err)
+		os.Exit(1)
 	}
+	logger.Log.Info("Migrations up to date")
 
-	logger.Log.Info(
-		"DB connection status",
-		"Connection", "Successful",
-	)
+	// 5. Redis
+	redisCache := cache.NewRedisCache(cfg)
+	pingCtx, pingCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if err := redisCache.Ping(pingCtx); err != nil {
+		pingCancel()
+		logger.Log.Error("Redis connection failed", "error", err)
+		os.Exit(1)
+	}
+	pingCancel()
+	logger.Log.Info("Redis connection successful", "addr", cfg.RedisAddr)
+
+	// 6. Dependencies
 	resolver := validator.RealResolver{}
-
-	urlValidator := validator.NewURLValidator(nil, &resolver, validatorTimeout)
-
-	redisCache := cache.NewRedisCache()
-
+	urlValidator := validator.NewURLValidator(nil, &resolver, int(cfg.ValidatorTimeout.Seconds()))
 	healthHandler := handlers.NewHealthHandler(db, redisCache.Client)
-
 	repo := database.NewPostgresRepository(db)
 
-	Mux := http.NewServeMux()
+	// 7. Routes
+	mux := http.NewServeMux()
+	mux.HandleFunc("/shorten", handlers.Shorten(repo, urlValidator, cfg))
+	mux.HandleFunc("/", handlers.OriginalUrl(repo, redisCache))
+	mux.HandleFunc("/health", healthHandler.Health)
+	mux.HandleFunc("/health/live", healthHandler.Liveness)
+	mux.HandleFunc("/health/ready", healthHandler.Readiness)
+	mux.Handle("/metrics", promhttp.Handler())
 
-	Mux.HandleFunc("/shorten", handlers.Shorten(repo, urlValidator))
-	Mux.HandleFunc("/", handlers.OriginalUrl(repo, redisCache))
-	Mux.HandleFunc("/health", healthHandler.Health)
-	Mux.Handle("/metrics", promhttp.Handler())
-
-	Limiter := middleware.NewRateLimiter(redisCache.Client)
-
-	MetricHandler := middleware.MetricMiddleware(Mux)
-
-	handler := Limiter.Limit(MetricHandler)
-
-	Logged := middleware.Logging(handler)
+	// 8. Middleware stack: request ID → logging → rate limit → metrics → routes
+	TkB := middleware.TokenBucketConfig{
+		Capacity:   int64(cfg.RateLimitCapacity),
+		RefillRate: cfg.RateLimitRefillPerSec,
+		KeyPrefix:  "tb:",
+		TTL:        cfg.RateLimitTTL,
+	}
+	limiter := middleware.NewRateLimiterWithConfig(redisCache.Client, TkB)
+	metricHandler := middleware.MetricMiddleware(mux)
+	rateLimited := limiter.Limit(metricHandler)
+	logged := middleware.Logging(rateLimited)
+	handler := middleware.RequestID(logged)
 
 	server := &http.Server{
-		Addr:    ":" + ServerPort,
-		Handler: Logged,
+		Addr:              ":" + cfg.Port,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
+	// 9. Start server
 	go func() {
-
-		logger.Log.Info(
-			"Server started",
-			"port", ":"+ServerPort,
-		)
-
+		logger.Log.Info("Server started", "addr", server.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Log.Error(
-				"Server failed",
-				"error", err.Error(),
-			)
+			logger.Log.Error("Server failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
+	// 10. Graceful shutdown
 	quit := make(chan os.Signal, 1)
-	signal.Notify(
-		quit,
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
 	logger.Log.Info("Shutdown signal received")
 
-	ctx, cancel := context.WithTimeout(
+	shutdownCtx, shutdownCancel := context.WithTimeout(
 		context.Background(),
-		time.Duration(shutdownTimeout)*time.Second,
+		cfg.ShutDownTimeout,
 	)
+	defer shutdownCancel()
 
-	defer cancel()
-
-	logger.Log.Info(
-		"Waiting for active requests to finish...",
-	)
-
-	if err := server.Shutdown(ctx); err != nil {
-
-		logger.Log.Error(
-			"Graceful shutdown failed",
-			"error", err.Error(),
-		)
+	logger.Log.Info("Waiting for active requests to finish...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Log.Error("Graceful shutdown failed", "error", err)
 	}
 
-	if err := redisCache.Client.Close(); err != nil {
-
-		logger.Log.Error(
-			"Redis close failed",
-			"error",
-			err.Error(),
-		)
-	} else {
-		logger.Log.Info("Redis connection closed")
-	}
+	_ = redisCache.Close()
 
 	if err := db.Close(); err != nil {
-
-		logger.Log.Error(
-			"Database close failed",
-			"error",
-			err.Error(),
-		)
-
+		logger.Log.Error("Database close failed", "error", err)
 	} else {
-		logger.Log.Info("DB connection closed")
+		logger.Log.Info("Database connection closed")
 	}
 
 	logger.Log.Info("Server shutdown complete")

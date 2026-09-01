@@ -1,30 +1,54 @@
 package database
 
 import (
+	"Linux-url-shortener/internal/config"
 	"Linux-url-shortener/internal/logger"
 	"Linux-url-shortener/internal/models"
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
-	"github.com/jackc/pgx/v5/pgconn"
-
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
-func Connect(host, port, user, password, dbname, sslmode string) (*sql.DB, error) {
-
-	connStr := string("host=" + host + " port=" + port + " user=" + user + " password=" + password + " dbname=" + dbname + " sslmode=" + sslmode)
-
-	db, err := sql.Open("postgres", connStr)
+func Connect(cfg *config.Config) (*sql.DB, error) {
+	db, err := sql.Open("postgres", cfg.PostgresDSN())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sql open: %w", err)
 	}
+
+	db.SetMaxOpenConns(cfg.DBMaxOpenConns)
+	db.SetMaxIdleConns(cfg.DBMaxIdleConns)
+	db.SetConnMaxLifetime(cfg.DBConnMaxLifetime)
+	db.SetConnMaxIdleTime(cfg.DBConnMaxIdleTime)
 
 	if err = db.Ping(); err != nil {
-		return nil, err
+		_ = db.Close()
+		return nil, fmt.Errorf("db ping: %w", err)
 	}
 
+	logger.Log.Info(
+		"Database pool configured",
+		"max_open", cfg.DBMaxOpenConns,
+		"max_idle", cfg.DBMaxIdleConns,
+		"max_lifetime", cfg.DBConnMaxLifetime.String(),
+		"max_idle_time", cfg.DBConnMaxIdleTime.String(),
+	)
+
 	return db, nil
+}
+
+func WaitForDB(db *sql.DB, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		if lastErr = db.Ping(); lastErr == nil {
+			return nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return fmt.Errorf("database not ready after %s: %w", timeout, lastErr)
 }
 
 func (p *PostgresRepository) SaveUrl(shortCode string, OriginalCode string) error {
@@ -33,7 +57,7 @@ func (p *PostgresRepository) SaveUrl(shortCode string, OriginalCode string) erro
 	_, err := p.DB.Exec(query, OriginalCode, shortCode)
 
 	if err != nil {
-		var pgErr *pgconn.PgError
+		var pgErr *pq.Error
 
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return ErrShortCodeExist

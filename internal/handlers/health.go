@@ -27,7 +27,6 @@ func NewHealthHandler(db *sql.DB, redis *redis.Client) *HealthHandler {
 }
 
 func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
-
 	response := HealthStatus{
 		Status:   "healthy",
 		Database: "up",
@@ -44,10 +43,45 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 		response.Redis = "down"
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	statusCode := http.StatusOK
+	if response.Status != "healthy" {
+		statusCode = http.StatusServiceUnavailable
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func (h *HealthHandler) Liveness(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"alive"}`))
+}
+
+func (h *HealthHandler) Readiness(w http.ResponseWriter, r *http.Request) {
+	response := HealthStatus{
+		Status:   "ready",
+		Database: "up",
+		Redis:    "up",
+	}
+
+	if err := h.DB.Ping(); err != nil {
+		response.Database = "down"
+		response.Status = "not_ready"
+	}
+
+	if err := h.Redis.Ping(r.Context()).Err(); err != nil {
+		response.Redis = "down"
+		response.Status = "not_ready"
+	}
+
+	statusCode := http.StatusOK
+	if response.Status != "ready" {
+		statusCode = http.StatusServiceUnavailable
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(response)
 }

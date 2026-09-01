@@ -20,8 +20,8 @@ type TokenBucketConfig struct {
 
 func DefualtConfig() TokenBucketConfig {
 	return TokenBucketConfig{
-		Capacity:   20,
-		RefillRate: 1.0,
+		Capacity:   100,
+		RefillRate: 1.6,
 		KeyPrefix:  "tb:",
 		TTL:        2 * time.Minute,
 	}
