@@ -88,16 +88,13 @@ No TOCTOU gap between check and write. Collisions are handled, not hoped away. R
 
 ## Hard lessons
 
-| Fixed-window rate limits felt blunt under bursts 
-| Token bucket with atomic consume in Redis |
-| Everyone shared one rate-limit bucket behind a proxy 
-| nginx forwards `X-Real-IP` / `X-Forwarded-For`; limiter reads client IP |
-| Integration tests slow and flaky 
-| Shared `TestMain` containers; `TRUNCATE` + Redis flush between tests |
-| Async click increment vs test teardown 
-| Cleanup wait so the DB is not closed mid-goroutine |
-| Config defaults hiding missing secrets 
-| Required env vars validated at startup |
+| Struggle | Resolution |
+|----------|------------|
+| Fixed-window rate limits felt blunt under bursts | Token bucket with atomic consume in Redis |
+| Everyone shared one rate-limit bucket behind a proxy | nginx forwards `X-Real-IP` / `X-Forwarded-For`; limiter reads client IP |
+| Integration tests slow and flaky | Shared `TestMain` containers; `TRUNCATE` + Redis flush between tests |
+| Async click increment vs test teardown | Cleanup wait so the DB is not closed mid-goroutine |
+| Config defaults hiding missing secrets | Required env vars validated at startup |
 
 ---
 
