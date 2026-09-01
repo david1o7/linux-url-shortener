@@ -1,6 +1,5 @@
 package validator
 
-
 func (v *URLValidator) isPrivateOrLoopback(host string) bool {
 
 	ips, err := v.resolver.LookupIP(host)

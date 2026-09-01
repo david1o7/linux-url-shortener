@@ -2,81 +2,64 @@ package handlers
 
 import (
 	"Linux-url-shortener/internal/cache"
+	"Linux-url-shortener/internal/config"
 	"Linux-url-shortener/internal/database"
 	"Linux-url-shortener/internal/logger"
 	metrics "Linux-url-shortener/internal/metric"
 	"Linux-url-shortener/internal/validator"
 
 	"Linux-url-shortener/internal/services"
-	"database/sql"
 	"encoding/json"
-	"os"
 
 	"net/http"
 	"strings"
-
-	"github.com/joho/godotenv"
 )
 
-type Request struct{
+type Request struct {
 	URL string `json:"url"`
 }
 
-type Response struct{
+type Response struct {
 	ShortCode string `json:"short_code"`
 }
 
-func Shorten(db *sql.DB, validator *validator.URLValidator) http.HandlerFunc {
+func Shorten(repo database.Repository, validator *validator.URLValidator, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var req Request
 
-		err := godotenv.Load()
+		BaseUrl := cfg.BaseURL
 
-		if err != nil{
-			logger.Log.Error(
-				".env file error",
-				"Error", err, 
-			)
-			http.Error(w, "Env file not found", http.StatusInternalServerError)
-			
-			return
-		}
+		err := json.NewDecoder(r.Body).Decode(&req)
 
-		BaseUrl := os.Getenv("BASE_URL")
-
-		err = json.NewDecoder(r.Body).Decode(&req)
-
-		if err != nil{
+		if err != nil {
 			http.Error(w, "Invalid content", http.StatusBadRequest)
 			return
 		}
 
-		if !validator.Validate(req.URL){
+		if !validator.Validate(req.URL) {
 			http.Error(w, "Invalid Url or cant be found", http.StatusBadRequest)
 			metrics.InvalidUrls.Inc()
-			return 
-		}
-
-		code , err:= services.GenerateUniqueCode(db)
-		if err != nil{
-			http.Error(w, err.Error(), 500)
 			return
 		}
-		err = database.SaveUrl(db, code, req.URL)
-		if err != nil{
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		code, err := services.GenerateUniqueCode(repo, req.URL, 10)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
 			return
 		}
 
 		metrics.UrlsShortened.Inc()
 
 		resp := Response{
-			ShortCode: BaseUrl + code,
+			ShortCode: BaseUrl + "/" + code,
 		}
 		w.Header().Set("Content-Type", "application/json")
 
-		json.NewEncoder(w).Encode(resp)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		logger.Log.Info(
 			"Short URL Created",
@@ -86,29 +69,29 @@ func Shorten(db *sql.DB, validator *validator.URLValidator) http.HandlerFunc {
 	}
 }
 
-func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request){
+func OriginalUrl(repo database.Repository, cache *cache.RedisCache) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		code := strings.TrimPrefix(r.URL.Path, "/")
 
-		url , err := cache.Get(code)
+		url, err := cache.Get(code)
 
-		if err == nil{
+		if err == nil {
 			logger.Log.Info(
 				"cache hit",
 				"Original Url", url,
 			)
 
 			metrics.CacheHits.Inc()
-			
+
 			logger.Log.Info(
 				"Redirecting...",
 				"Original Url", url,
 			)
 
-			go func(){
-				err := database.IncrementClicks(db, code)
+			go func() {
+				err := repo.IncrementClicks(code)
 
-			if err != nil{
+				if err != nil {
 					logger.Log.Error(
 						"Failed to increment clicks",
 						"Shortcode", code,
@@ -117,7 +100,7 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 				}
 			}()
 
-			http.Redirect(w,r,url, http.StatusFound)
+			http.Redirect(w, r, url, http.StatusFound)
 			metrics.Redirects.Inc()
 			return
 		}
@@ -128,32 +111,37 @@ func OriginalUrl(db *sql.DB, cache *cache.RedisCache) http.HandlerFunc {
 		)
 		metrics.CacheMisses.Inc()
 
-		original, err := database.GetUrl(db, code)
+		original, err := repo.GetUrl(code)
 
-		if err != nil || original == ""{
+		if err != nil || original == "" {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		cache.Set(code, original)
-
-		
-		logger.Log.Info(
-				"Redirecting...",
-				"Original Url", original,
+		if err = cache.Set(code, original); err != nil {
+			logger.Log.Error(
+				"Cache update Error",
+				"Err", err,
 			)
-		
-		go func(){
-			err := database.IncrementClicks(db, code)
+			return
+		}
 
-			if err != nil{
-					logger.Log.Error(
-						"Failed to increment clicks",
-						"Shortcode", code,
-						"error", err,
-					)
-				}
-			}()
+		logger.Log.Info(
+			"Redirecting...",
+			"Original Url", original,
+		)
+
+		go func() {
+			err := repo.IncrementClicks(code)
+
+			if err != nil {
+				logger.Log.Error(
+					"Failed to increment clicks",
+					"Shortcode", code,
+					"error", err,
+				)
+			}
+		}()
 
 		http.Redirect(w, r, original, http.StatusFound)
 	}

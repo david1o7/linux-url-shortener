@@ -2,18 +2,18 @@ package cache
 
 import "sync"
 
-type Cache struct{
+type Cache struct {
 	data map[string]string
-	mu sync.RWMutex
+	mu   sync.RWMutex
 }
 
-func NewCache() *Cache{
+func NewCache() *Cache {
 	return &Cache{
 		data: make(map[string]string),
 	}
 }
 
-func (c *Cache) Get(code string) (string, bool){
+func (c *Cache) Get(code string) (string, bool) {
 	c.mu.RLock()
 
 	defer c.mu.RUnlock()
@@ -23,8 +23,8 @@ func (c *Cache) Get(code string) (string, bool){
 	return url, ok
 }
 
-func (c *Cache) Set(code string, url string){
-	
+func (c *Cache) Set(code string, url string) {
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
