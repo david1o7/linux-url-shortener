@@ -3,3 +3,5 @@ golangci.tar.gz
 golangci-lint-2.13.1-linux-amd64/
 coverage.out
 images/
+.github
+tests/
